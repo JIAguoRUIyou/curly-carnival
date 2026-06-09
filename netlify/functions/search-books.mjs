@@ -1,6 +1,5 @@
-export default async (request) => {
-  const requestUrl = new URL(request.url);
-  const query = requestUrl.searchParams.get("q")?.trim();
+export async function handler(event) {
+  const query = event.queryStringParameters?.q?.trim();
 
   if (!query) {
     return json({ docs: [], error: "missing query" }, 400);
@@ -19,14 +18,15 @@ export default async (request) => {
   } catch (error) {
     return json({ docs: [], error: "search unavailable", message: error.message }, 502);
   }
-};
+}
 
 function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
+  return {
     status,
     headers: {
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": "*"
-    }
-  });
+    },
+    body: JSON.stringify(body)
+  };
 }
