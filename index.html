@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智习计划</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="top-hub">
+        <div class="top-tools" aria-label="学习工具">
+          <button class="tool-btn" id="notesBtn" type="button">记事本</button>
+          <button class="tool-btn" id="gameBtn" type="button">小游戏</button>
+          <button class="tool-btn" id="pomodoroBtn" type="button">番茄钟</button>
+          <button class="tool-btn" id="reviewBtn" type="button">每日复盘</button>
+        </div>
+
+        <article class="daily-english">
+          <div>
+            <p class="kicker">每日英文短篇</p>
+            <h2>Small Steps Make Strong Minds</h2>
+          </div>
+          <p class="english-text">A clear plan does not make learning easy, but it makes every effort easier to begin.</p>
+          <p class="translation">清晰的计划不会让学习变得轻松，但会让每一次努力更容易开始。</p>
+          <details>
+            <summary>查看语法</summary>
+            <div class="grammar-list">
+              <p><strong>A clear plan</strong> 是主语，表示“一个清晰的计划”。</p>
+              <p><strong>does not make learning easy</strong> 使用 make + 宾语 + 形容词，表示“使学习变得容易”。</p>
+              <p><strong>but</strong> 连接转折关系，后半句强调计划能降低开始行动的阻力。</p>
+              <p><strong>every effort easier to begin</strong> 中 easier to begin 作宾语补足语，说明每次努力的状态。</p>
+            </div>
+          </details>
+        </article>
+
+        <section class="add-book top-import">
+          <div class="add-book-head">
+            <div>
+              <p class="kicker">添加教材</p>
+              <h2>搜索导入或手动创建</h2>
+            </div>
+            <form id="quickAddForm">
+              <input id="quickTitle" placeholder="如：线性代数、考研英语阅读、操作系统" required />
+              <button class="primary-btn" type="submit">手动添加</button>
+            </form>
+          </div>
+          <form class="import-search" id="importSearchForm">
+            <input id="importQuery" placeholder="输入书名联网搜索，例如：概率论、大学英语、高等数学" required />
+            <button class="primary-btn" type="submit">联网搜索</button>
+          </form>
+          <div class="import-status" id="importStatus">联网入口会导入书名、作者和年份等书目信息，并按学科生成初始章节模板；导入后可以继续精修目录和难度。</div>
+          <div class="import-results" id="importResults"></div>
+        </section>
+      </section>
+
+      <section class="hero">
+        <img src="assets/study-desk.png" alt="" class="hero-image" />
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="eyebrow">科学复习 · 教材管理 · 学习计划</p>
+          <h1>智习计划</h1>
+          <p class="hero-copy">根据教材内容、考试日期、每日可用时间和掌握程度，自动生成间隔复习、主动回忆、错题强化与冲刺安排。</p>
+          <div class="hero-actions">
+            <button class="primary-btn" id="generateAllBtn" type="button">生成总计划</button>
+            <button class="ghost-btn" id="resetBtn" type="button">恢复初始教材</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <div class="section-head">
+            <div>
+              <p class="kicker">教材库</p>
+              <h2>我的教材</h2>
+            </div>
+            <span class="count-pill" id="bookCount">0</span>
+          </div>
+          <label class="sidebar-filter">
+            学习年份
+            <select id="yearFilter"></select>
+          </label>
+          <div class="book-list" id="bookList"></div>
+        </aside>
+
+        <section class="planner">
+          <div class="toolbar">
+            <div>
+              <p class="kicker">当前教材</p>
+              <h2 id="activeTitle">英语四级</h2>
+            </div>
+            <div class="toolbar-actions">
+              <button class="icon-btn" id="exportBtn" type="button" title="导出学习计划">↓</button>
+              <button class="icon-btn" id="deleteBtn" type="button" title="删除当前教材">×</button>
+            </div>
+          </div>
+
+          <div class="panel-grid">
+            <form class="editor" id="bookForm">
+              <label>
+                教材名称
+                <input id="titleInput" required />
+              </label>
+              <label>
+                考试日期
+                <input id="examInput" type="date" required />
+              </label>
+              <label>
+                学习年份
+                <input id="yearInput" type="number" min="2020" max="2100" required />
+              </label>
+              <label>
+                每日学习时间（分钟）
+                <input id="minutesInput" type="number" min="20" max="480" step="10" required />
+              </label>
+              <label>
+                当前掌握度
+                <select id="masteryInput">
+                  <option value="0.25">刚开始</option>
+                  <option value="0.45">有基础</option>
+                  <option value="0.65">基本掌握</option>
+                  <option value="0.8">冲刺查漏</option>
+                </select>
+              </label>
+              <label class="wide">
+                章节 / 模块（每行一个，可加 “| 难度1-5”。联网导入会先生成可编辑模板）
+                <textarea id="chaptersInput" rows="7" required></textarea>
+              </label>
+              <label class="wide">
+                备注目标
+                <textarea id="goalInput" rows="3"></textarea>
+              </label>
+              <button class="primary-btn wide" type="submit">保存并生成</button>
+            </form>
+
+            <div class="method-card">
+              <p class="kicker">自动生成</p>
+              <h3>最优复习方法</h3>
+              <div id="methodOutput" class="method-output"></div>
+            </div>
+          </div>
+
+          <div class="plan-section">
+            <div class="section-head">
+              <div>
+                <p class="kicker">学习节奏</p>
+                <h2>计划表</h2>
+              </div>
+              <div class="plan-actions">
+                <button class="primary-btn" id="exportTodayImageBtn" type="button">导出今日图片</button>
+                <button class="primary-btn" id="exportWeeklyImageBtn" type="button">导出周报图片</button>
+                <div class="segment">
+                  <button type="button" class="active" data-view="week">周视图</button>
+                  <button type="button" data-view="day">日视图</button>
+                </div>
+              </div>
+            </div>
+            <div id="planOutput" class="plan-output"></div>
+          </div>
+
+          <div class="heatmap-section">
+            <div class="section-head">
+              <div>
+                <p class="kicker">坚持记录</p>
+                <h2>学习热力图</h2>
+              </div>
+              <div class="heatmap-actions">
+                <span class="heatmap-legend">颜色越深，完成越多</span>
+                <div class="segment heatmap-toggle">
+                  <button type="button" class="active" data-heatmap-view="month">月</button>
+                  <button type="button" data-heatmap-view="year">年</button>
+                </div>
+              </div>
+            </div>
+            <div class="heatmap-grid" id="heatmapGrid"></div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+
+    <div class="modal-layer" id="notesModal" aria-hidden="true">
+      <section class="modal-card notes-modal" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">学习工具</p>
+            <h2 id="notesTitle">记事本</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="notesModal">×</button>
+        </div>
+        <div class="note-controls">
+          <label>
+            背景
+            <select id="noteBg">
+              <option value="white">白色</option>
+              <option value="black">黑色</option>
+              <option value="beige">米色</option>
+            </select>
+          </label>
+          <label>
+            字体
+            <select id="noteFont">
+              <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+              <option value="'SimSun', serif">宋体</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Georgia, serif">Georgia</option>
+            </select>
+          </label>
+          <label>
+            大小
+            <input id="noteSize" type="number" min="12" max="32" value="16" />
+          </label>
+          <label>
+            颜色
+            <input id="noteColor" type="color" value="#18201f" />
+          </label>
+        </div>
+        <textarea id="noteText" class="note-text" rows="13" placeholder="写下今日任务、灵感、错题提醒或英语句子..."></textarea>
+      </section>
+    </div>
+
+    <div class="modal-layer" id="gameModal" aria-hidden="true">
+      <section class="modal-card game-modal" role="dialog" aria-modal="true" aria-labelledby="gameTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">轻松一下</p>
+            <h2 id="gameTitle">单词配对小游戏</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="gameModal">×</button>
+        </div>
+        <div class="game-status">
+          <span id="gameScore">得分：0</span>
+          <span id="gameMessage">点击一个英文，再点击对应中文。</span>
+          <button class="primary-btn" id="restartGameBtn" type="button">重新开始</button>
+        </div>
+        <div class="game-board">
+          <div>
+            <h3>English</h3>
+            <div class="match-column" id="englishWords"></div>
+          </div>
+          <div>
+            <h3>中文</h3>
+            <div class="match-column" id="chineseWords"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-layer" id="pomodoroModal" aria-hidden="true">
+      <section class="modal-card pomodoro-modal" role="dialog" aria-modal="true" aria-labelledby="pomodoroTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">专注记录</p>
+            <h2 id="pomodoroTitle">番茄钟</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="pomodoroModal">×</button>
+        </div>
+        <div class="pomodoro-display" id="pomodoroDisplay">25:00</div>
+        <div class="pomodoro-settings">
+          <label>
+            科目
+            <select id="pomodoroSubject"></select>
+          </label>
+          <label>
+            时长
+            <select id="pomodoroMinutes">
+              <option value="25">25 分钟</option>
+              <option value="45">45 分钟</option>
+              <option value="60">60 分钟</option>
+            </select>
+          </label>
+        </div>
+        <div class="pomodoro-actions">
+          <button class="primary-btn" id="startPomodoroBtn" type="button">开始</button>
+          <button class="ghost-light-btn" id="pausePomodoroBtn" type="button">暂停</button>
+          <button class="ghost-light-btn" id="finishPomodoroBtn" type="button">完成并记录</button>
+          <button class="ghost-light-btn" id="resetPomodoroBtn" type="button">重置</button>
+        </div>
+        <p class="pomodoro-note" id="pomodoroNote">完成后会自动计入今日学习时长，并进入热力图和周报。</p>
+      </section>
+    </div>
+
+    <div class="modal-layer" id="reviewModal" aria-hidden="true">
+      <section class="modal-card review-modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">每日复盘</p>
+            <h2 id="reviewTitle">今天先想清楚三件事</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="reviewModal">×</button>
+        </div>
+        <form class="review-form" id="reviewForm">
+          <label>
+            今天最重要的任务是什么？
+            <textarea id="reviewPriority" rows="3"></textarea>
+          </label>
+          <label>
+            昨天或最近卡在哪里？
+            <textarea id="reviewBlocker" rows="3"></textarea>
+          </label>
+          <label>
+            今天的最小完成量是什么？
+            <textarea id="reviewMinimum" rows="3"></textarea>
+          </label>
+          <button class="primary-btn" type="submit">保存复盘</button>
+        </form>
+      </section>
+    </div>
+
+    <template id="bookTemplate">
+      <button class="book-item" type="button">
+        <span class="book-name"></span>
+        <span class="book-meta"></span>
+      </button>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
