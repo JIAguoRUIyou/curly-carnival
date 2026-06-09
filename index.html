@@ -6,54 +6,22 @@
     <title>智习计划</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body class="entry-active">
+    <div class="entry-screen" id="entryScreen">
+      <div class="entry-theme-picker" aria-label="背景主题">
+        <span>背景</span>
+        <div id="entryThemeGrid" class="entry-theme-grid"></div>
+      </div>
+      <div class="entry-backdrop"></div>
+      <div class="entry-content">
+        <p class="entry-kicker">Roing老师小课堂</p>
+        <h1>智习计划</h1>
+        <p>把教材、复盘、短篇英文和专注记录放在同一个学习节奏里。</p>
+        <button class="entry-start-btn" id="startLearningBtn" type="button">马上学习</button>
+      </div>
+    </div>
+
     <main class="app-shell">
-      <section class="top-hub">
-        <div class="top-tools" aria-label="学习工具">
-          <button class="tool-btn" id="notesBtn" type="button">记事本</button>
-          <button class="tool-btn" id="gameBtn" type="button">小游戏</button>
-          <button class="tool-btn" id="pomodoroBtn" type="button">番茄钟</button>
-          <button class="tool-btn" id="reviewBtn" type="button">每日复盘</button>
-        </div>
-
-        <article class="daily-english">
-          <div>
-            <p class="kicker">每日英文短篇</p>
-            <h2>Small Steps Make Strong Minds</h2>
-          </div>
-          <p class="english-text">A clear plan does not make learning easy, but it makes every effort easier to begin.</p>
-          <p class="translation">清晰的计划不会让学习变得轻松，但会让每一次努力更容易开始。</p>
-          <details>
-            <summary>查看语法</summary>
-            <div class="grammar-list">
-              <p><strong>A clear plan</strong> 是主语，表示“一个清晰的计划”。</p>
-              <p><strong>does not make learning easy</strong> 使用 make + 宾语 + 形容词，表示“使学习变得容易”。</p>
-              <p><strong>but</strong> 连接转折关系，后半句强调计划能降低开始行动的阻力。</p>
-              <p><strong>every effort easier to begin</strong> 中 easier to begin 作宾语补足语，说明每次努力的状态。</p>
-            </div>
-          </details>
-        </article>
-
-        <section class="add-book top-import">
-          <div class="add-book-head">
-            <div>
-              <p class="kicker">添加教材</p>
-              <h2>搜索导入或手动创建</h2>
-            </div>
-            <form id="quickAddForm">
-              <input id="quickTitle" placeholder="如：线性代数、考研英语阅读、操作系统" required />
-              <button class="primary-btn" type="submit">手动添加</button>
-            </form>
-          </div>
-          <form class="import-search" id="importSearchForm">
-            <input id="importQuery" placeholder="输入书名联网搜索，例如：概率论、大学英语、高等数学" required />
-            <button class="primary-btn" type="submit">联网搜索</button>
-          </form>
-          <div class="import-status" id="importStatus">联网入口会导入书名、作者和年份等书目信息，并按学科生成初始章节模板；导入后可以继续精修目录和难度。</div>
-          <div class="import-results" id="importResults"></div>
-        </section>
-      </section>
-
       <section class="hero">
         <img src="assets/study-desk.png" alt="" class="hero-image" />
         <div class="hero-overlay"></div>
@@ -68,6 +36,50 @@
         </div>
       </section>
 
+      <section class="study-flow">
+      <section class="top-hub">
+        <div class="top-tools" aria-label="学习工具">
+          <button class="tool-btn" id="notesBtn" type="button">记事本</button>
+          <button class="tool-btn" id="gameBtn" type="button">小游戏</button>
+          <button class="tool-btn" id="pomodoroBtn" type="button">番茄钟</button>
+          <button class="tool-btn" id="reviewBtn" type="button">每日复盘</button>
+        </div>
+
+        <article class="daily-english" id="dailyEnglish">
+          <div>
+            <p class="kicker">每日英文短篇</p>
+            <h2 id="dailyEnglishTitle">A Quiet Hour Before Sunrise</h2>
+          </div>
+          <p class="english-text" id="dailyEnglishText">Before sunrise, Lin opened her notebook and wrote down three small goals for the day. She knew that motivation would not always arrive on time, so she built a routine that could carry her forward when her mood was uncertain. For the first twenty minutes, she reviewed yesterday's mistakes without checking the answers. Then she read one short passage aloud, marking useful phrases in blue. By the time the city became noisy, her mind had already entered a steady rhythm. Progress, she realized, was not a sudden gift but a quiet result of returning to the desk again and again.</p>
+          <p class="translation" id="dailyEnglishTranslation">日出前，林打开笔记本，写下当天的三个小目标。她知道动力并不总会准时出现，所以建立了一套习惯，让自己在状态不稳定时也能继续前进。前二十分钟，她不看答案，先复盘昨天的错误。接着，她朗读一篇短文，并用蓝色标出有用表达。等城市渐渐喧闹起来时，她的思绪已经进入稳定节奏。她意识到，进步不是突然降临的礼物，而是一次又一次回到书桌前所产生的安静结果。</p>
+          <details>
+            <summary>查看语法</summary>
+            <div class="grammar-list" id="dailyEnglishGrammar">
+              <p><strong>Before sunrise</strong> 是时间状语，放在句首交代故事发生的时间。</p>
+              <p><strong>She knew that...</strong> 中 that 引导宾语从句，说明“她知道”的具体内容。</p>
+              <p><strong>so she built...</strong> 使用 so 连接因果关系，前半句是原因，后半句是行动结果。</p>
+              <p><strong>when her mood was uncertain</strong> 是时间状语从句，也带有条件意味，表示状态不稳定的时候。</p>
+              <p><strong>marking useful phrases in blue</strong> 是现在分词短语，补充说明朗读时同时进行的动作。</p>
+              <p><strong>not a sudden gift but...</strong> 使用 not...but... 结构，强调进步不是偶然，而是重复行动的结果。</p>
+            </div>
+          </details>
+        </article>
+
+        <section class="add-book top-import">
+          <div class="add-book-head">
+            <div>
+              <p class="kicker">添加教材</p>
+              <h2>手动创建教材</h2>
+            </div>
+            <form id="quickAddForm">
+              <input id="quickTitle" placeholder="如：线性代数、考研英语阅读、操作系统" required />
+              <button class="primary-btn" type="submit">手动添加</button>
+            </form>
+          </div>
+          <div class="quick-add-status" id="quickAddStatus">输入教材名后会自动生成可编辑章节模板；已存在的同名教材不会重复添加。</div>
+        </section>
+      </section>
+
       <section class="workspace">
         <aside class="sidebar">
           <div class="section-head">
@@ -80,6 +92,10 @@
           <label class="sidebar-filter">
             学习年份
             <select id="yearFilter"></select>
+          </label>
+          <label class="sidebar-filter">
+            搜索教材
+            <input id="bookSearchInput" type="search" placeholder="搜索已添加教材" />
           </label>
           <div class="book-list" id="bookList"></div>
         </aside>
@@ -177,6 +193,8 @@
           </div>
         </section>
       </section>
+      <footer class="site-footer">Roing老师小课堂开课了。</footer>
+      </section>
 
     </main>
 
@@ -190,6 +208,10 @@
           <button class="icon-btn close-modal" type="button" data-close="notesModal">×</button>
         </div>
         <div class="note-controls">
+          <label>
+            日期
+            <input id="noteDate" type="date" />
+          </label>
           <label>
             背景
             <select id="noteBg">
@@ -216,6 +238,11 @@
             <input id="noteColor" type="color" value="#18201f" />
           </label>
         </div>
+        <div class="note-search-row">
+          <input id="noteSearchInput" type="search" placeholder="搜索记事内容，快捷区只保留最近两次" />
+          <div id="noteSearchResults" class="note-search-results"></div>
+          <div id="noteDatePreview" class="note-date-preview">鼠标移到日期或快捷记录上，可预览当天记事。</div>
+        </div>
         <textarea id="noteText" class="note-text" rows="13" placeholder="写下今日任务、灵感、错题提醒或英语句子..."></textarea>
       </section>
     </div>
@@ -225,24 +252,45 @@
         <div class="modal-head">
           <div>
             <p class="kicker">轻松一下</p>
-            <h2 id="gameTitle">单词配对小游戏</h2>
+            <h2 id="gameTitle">六级翻译续写挑战</h2>
           </div>
           <button class="icon-btn close-modal" type="button" data-close="gameModal">×</button>
         </div>
         <div class="game-status">
           <span id="gameScore">得分：0</span>
-          <span id="gameMessage">点击一个英文，再点击对应中文。</span>
+          <span id="gameMessage">每次打开都会随机抽题，先翻译再续写。</span>
           <button class="primary-btn" id="restartGameBtn" type="button">重新开始</button>
         </div>
-        <div class="game-board">
-          <div>
-            <h3>English</h3>
-            <div class="match-column" id="englishWords"></div>
+        <div class="translation-game">
+          <div class="word-bank" id="gameWordBank"></div>
+          <div class="match-game">
+            <div>
+              <h3>英文</h3>
+              <div class="match-column" id="englishWords"></div>
+            </div>
+            <div>
+              <h3>中文</h3>
+              <div class="match-column" id="chineseWords"></div>
+            </div>
           </div>
-          <div>
-            <h3>中文</h3>
-            <div class="match-column" id="chineseWords"></div>
+          <article class="game-question">
+            <p class="kicker">当前题目</p>
+            <h3 id="gamePromptWord">challenge</h3>
+            <p id="gamePromptExample"></p>
+          </article>
+          <label>
+            写出中文翻译
+            <textarea id="gameTranslationInput" rows="3" placeholder="尽量写出核心含义，可以包含近义解释"></textarea>
+          </label>
+          <label>
+            用这个词续写一句英文
+            <textarea id="gameWritingInput" rows="3" placeholder="例如：This experience helped me..."></textarea>
+          </label>
+          <div class="game-actions">
+            <button class="primary-btn" id="submitGameBtn" type="button">提交评分</button>
+            <button class="ghost-light-btn" id="nextGameBtn" type="button">下一题</button>
           </div>
+          <div class="game-feedback" id="gameFeedback"></div>
         </div>
       </section>
     </div>
@@ -291,6 +339,10 @@
           <button class="icon-btn close-modal" type="button" data-close="reviewModal">×</button>
         </div>
         <form class="review-form" id="reviewForm">
+          <label>
+            复盘日期
+            <input id="reviewDate" type="date" />
+          </label>
           <label>
             今天最重要的任务是什么？
             <textarea id="reviewPriority" rows="3"></textarea>

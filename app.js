@@ -1,7 +1,8 @@
-const STORAGE_KEY = "smart-study-planner-v1";
+﻿const STORAGE_KEY = "smart-study-planner-v1";
 const DONE_KEY = "smart-study-done-v1";
 const FOCUS_KEY = "smart-study-focus-v1";
 const REVIEW_KEY = "smart-study-review-v1";
+const THEME_KEY = "smart-study-entry-theme-v1";
 
 const today = new Date();
 const isoDate = (date) => date.toISOString().slice(0, 10);
@@ -62,6 +63,40 @@ let activeId = state.activeId || state.books[0].id;
 let currentView = "week";
 let currentHeatmapView = "month";
 let currentYearFilter = "all";
+let bookSearchQuery = "";
+
+const entryThemes = [
+  ["forest", "#2f7d5c", "#1e5c43", "#2f6f9f", "#f8faf7", "linear-gradient(120deg, rgba(9,28,22,.82), rgba(47,125,92,.46)), url('assets/study-desk.png') center / cover", "linear-gradient(135deg,#1e5c43,#78c69a)"],
+  ["ocean", "#287aa8", "#165a7c", "#21a0a0", "#f5fbfd", "radial-gradient(circle at 20% 20%, rgba(126,213,232,.55), transparent 28%), linear-gradient(135deg,#0f3554,#1b8fa6)", "linear-gradient(135deg,#0f5b8f,#64d2d8)"],
+  ["sunrise", "#d96d3f", "#9b452a", "#d69b32", "#fff9f2", "radial-gradient(circle at 18% 24%, rgba(255,214,126,.8), transparent 26%), linear-gradient(135deg,#7b2d26,#e08b45)", "linear-gradient(135deg,#d96d3f,#ffd166)"],
+  ["lavender", "#7357b7", "#4b3a84", "#c06fb1", "#fbf8ff", "radial-gradient(circle at 70% 20%, rgba(214,190,255,.65), transparent 24%), linear-gradient(135deg,#36245b,#8d6bd6)", "linear-gradient(135deg,#7357b7,#c9a7ff)"],
+  ["ink", "#334155", "#172033", "#64748b", "#f7f8fb", "linear-gradient(135deg,#0f172a,#334155), repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 2px, transparent 2px 12px)", "linear-gradient(135deg,#111827,#64748b)"],
+  ["mint", "#2fa38b", "#1f6f62", "#3aa9c9", "#f4fffb", "radial-gradient(circle at 15% 80%, rgba(169,255,221,.5), transparent 25%), linear-gradient(135deg,#0f4d46,#5cc9a7)", "linear-gradient(135deg,#2fa38b,#9df2d0)"],
+  ["peach", "#dd6b6b", "#9f3f46", "#f4a261", "#fff8f6", "radial-gradient(circle at 80% 18%, rgba(255,198,184,.8), transparent 24%), linear-gradient(135deg,#6d2738,#dd6b6b)", "linear-gradient(135deg,#dd6b6b,#ffc6a8)"],
+  ["gold", "#b7791f", "#7c4a03", "#d69b32", "#fffaf0", "linear-gradient(135deg,#3b2f12,#b7791f), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 10px)", "linear-gradient(135deg,#b7791f,#f6d365)"],
+  ["rose", "#c44569", "#8f2f4f", "#f06292", "#fff7fa", "radial-gradient(circle at 28% 24%, rgba(255,180,203,.65), transparent 26%), linear-gradient(135deg,#4a1630,#c44569)", "linear-gradient(135deg,#c44569,#ff9ebb)"],
+  ["sky", "#3182ce", "#1e5a96", "#63b3ed", "#f5faff", "linear-gradient(180deg,#0f4c81,#6bb6ff), radial-gradient(circle at 30% 30%, rgba(255,255,255,.4), transparent 18%)", "linear-gradient(135deg,#3182ce,#90cdf4)"],
+  ["lime", "#5a9f2f", "#3d6f1d", "#9ac23c", "#fbfff4", "repeating-linear-gradient(135deg, rgba(255,255,255,.09) 0 7px, transparent 7px 18px), linear-gradient(135deg,#315b1f,#7cad39)", "linear-gradient(135deg,#5a9f2f,#c8e66a)"],
+  ["teal", "#0f8b8d", "#075b5d", "#2ec4b6", "#f3ffff", "radial-gradient(circle at 80% 75%, rgba(46,196,182,.7), transparent 24%), linear-gradient(135deg,#073b4c,#0f8b8d)", "linear-gradient(135deg,#0f8b8d,#2ec4b6)"],
+  ["plum", "#8e44ad", "#5e3370", "#bb6bd9", "#fcf7ff", "linear-gradient(135deg,#2e1745,#8e44ad), repeating-radial-gradient(circle at 25% 25%, rgba(255,255,255,.1) 0 2px, transparent 2px 12px)", "linear-gradient(135deg,#8e44ad,#d6a4ff)"],
+  ["coffee", "#8b5e34", "#5f3c21", "#b08968", "#fffaf5", "linear-gradient(135deg,#2d1b12,#8b5e34), repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 9px)", "linear-gradient(135deg,#8b5e34,#d8b48a)"],
+  ["charcoal", "#3f4a54", "#202a33", "#7a8793", "#f6f7f8", "linear-gradient(135deg,#11161c,#3f4a54), radial-gradient(circle at 70% 20%, rgba(255,255,255,.12), transparent 24%)", "linear-gradient(135deg,#202a33,#7a8793)"],
+  ["coral", "#e76f51", "#a34834", "#2a9d8f", "#fff8f4", "radial-gradient(circle at 20% 75%, rgba(42,157,143,.5), transparent 24%), linear-gradient(135deg,#783224,#e76f51)", "linear-gradient(135deg,#e76f51,#f4a261)"],
+  ["navy", "#264b96", "#182d5c", "#4d7cce", "#f5f7ff", "linear-gradient(135deg,#06133a,#264b96), radial-gradient(circle at 68% 28%, rgba(120,160,255,.45), transparent 23%)", "linear-gradient(135deg,#264b96,#7ea6ff)"],
+  ["bamboo", "#4f8a45", "#2f5f2b", "#8dbf67", "#f8fff5", "repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 4px, transparent 4px 24px), linear-gradient(135deg,#254d2b,#6da85c)", "linear-gradient(135deg,#4f8a45,#b9df8a)"],
+  ["berry", "#9f315c", "#6e1f3e", "#d55c83", "#fff6fa", "radial-gradient(circle at 72% 72%, rgba(255,150,180,.58), transparent 25%), linear-gradient(135deg,#3d1328,#9f315c)", "linear-gradient(135deg,#9f315c,#f08fb1)"],
+  ["ice", "#4f9db3", "#2b6d7f", "#a6e3e9", "#f4fdff", "linear-gradient(135deg,#173f52,#4f9db3), repeating-linear-gradient(45deg, rgba(255,255,255,.13) 0 1px, transparent 1px 14px)", "linear-gradient(135deg,#4f9db3,#c7f9ff)"],
+  ["sand", "#c28f44", "#8a6128", "#e9c46a", "#fffaf0", "radial-gradient(circle at 25% 28%, rgba(255,230,170,.6), transparent 22%), linear-gradient(135deg,#5c3f21,#c28f44)", "linear-gradient(135deg,#c28f44,#f4d88c)"],
+  ["orchid", "#a855a5", "#71346f", "#f0abfc", "#fff7ff", "linear-gradient(135deg,#34113f,#a855a5), radial-gradient(circle at 20% 20%, rgba(255,210,255,.4), transparent 20%)", "linear-gradient(135deg,#a855a5,#f0abfc)"],
+  ["jade", "#1f9d72", "#116449", "#64d8a8", "#f4fff9", "radial-gradient(circle at 72% 18%, rgba(100,216,168,.65), transparent 23%), linear-gradient(135deg,#083b2d,#1f9d72)", "linear-gradient(135deg,#1f9d72,#91f0c0)"],
+  ["ruby", "#b83242", "#7f1d2d", "#ef6f7f", "#fff7f8", "linear-gradient(135deg,#3b0d17,#b83242), repeating-linear-gradient(135deg, rgba(255,255,255,.09) 0 2px, transparent 2px 13px)", "linear-gradient(135deg,#b83242,#ff9aa7)"],
+  ["steel", "#58728a", "#34495e", "#8fb3d1", "#f7fbff", "linear-gradient(135deg,#1f2f3d,#58728a), radial-gradient(circle at 80% 80%, rgba(200,230,255,.35), transparent 22%)", "linear-gradient(135deg,#58728a,#b5d4ec)"],
+  ["moss", "#607d3b", "#3f5528", "#a3b65c", "#fbfff3", "repeating-radial-gradient(circle at 30% 30%, rgba(255,255,255,.11) 0 2px, transparent 2px 13px), linear-gradient(135deg,#28381e,#607d3b)", "linear-gradient(135deg,#607d3b,#c4d96b)"],
+  ["midnight", "#4c51bf", "#2d2f7f", "#7f9cf5", "#f7f7ff", "radial-gradient(circle at 20% 20%, rgba(255,255,255,.23), transparent 3%), radial-gradient(circle at 70% 35%, rgba(255,255,255,.18), transparent 2%), linear-gradient(135deg,#050816,#4c51bf)", "linear-gradient(135deg,#4c51bf,#9aa8ff)"],
+  ["flame", "#c2410c", "#7c2d12", "#f97316", "#fff7ed", "linear-gradient(135deg,#3f1608,#c2410c), radial-gradient(circle at 72% 30%, rgba(255,180,90,.58), transparent 23%)", "linear-gradient(135deg,#c2410c,#fb923c)"],
+  ["rain", "#40798c", "#285463", "#70a9a1", "#f4fbfb", "repeating-linear-gradient(115deg, rgba(255,255,255,.12) 0 1px, transparent 1px 12px), linear-gradient(135deg,#143642,#40798c)", "linear-gradient(135deg,#40798c,#9ad1d4)"],
+  ["paper", "#6b7280", "#374151", "#9ca3af", "#fafafa", "linear-gradient(135deg,#f4f1ea,#d8d3c7), repeating-linear-gradient(0deg, rgba(40,40,40,.06) 0 1px, transparent 1px 22px)", "linear-gradient(135deg,#6b7280,#d1d5db)"]
+];
 
 const nodes = {
   bookCount: document.querySelector("#bookCount"),
@@ -80,10 +115,15 @@ const nodes = {
   planOutput: document.querySelector("#planOutput"),
   quickAddForm: document.querySelector("#quickAddForm"),
   quickTitle: document.querySelector("#quickTitle"),
-  importSearchForm: document.querySelector("#importSearchForm"),
-  importQuery: document.querySelector("#importQuery"),
-  importStatus: document.querySelector("#importStatus"),
-  importResults: document.querySelector("#importResults"),
+  quickAddStatus: document.querySelector("#quickAddStatus"),
+  bookSearchInput: document.querySelector("#bookSearchInput"),
+  dailyEnglishTitle: document.querySelector("#dailyEnglishTitle"),
+  dailyEnglishText: document.querySelector("#dailyEnglishText"),
+  dailyEnglishTranslation: document.querySelector("#dailyEnglishTranslation"),
+  dailyEnglishGrammar: document.querySelector("#dailyEnglishGrammar"),
+  entryScreen: document.querySelector("#entryScreen"),
+  startLearningBtn: document.querySelector("#startLearningBtn"),
+  entryThemeGrid: document.querySelector("#entryThemeGrid"),
   resetBtn: document.querySelector("#resetBtn"),
   deleteBtn: document.querySelector("#deleteBtn"),
   exportBtn: document.querySelector("#exportBtn"),
@@ -97,11 +137,23 @@ const nodes = {
   gameModal: document.querySelector("#gameModal"),
   pomodoroModal: document.querySelector("#pomodoroModal"),
   reviewModal: document.querySelector("#reviewModal"),
+  noteDate: document.querySelector("#noteDate"),
   noteBg: document.querySelector("#noteBg"),
   noteFont: document.querySelector("#noteFont"),
   noteSize: document.querySelector("#noteSize"),
   noteColor: document.querySelector("#noteColor"),
   noteText: document.querySelector("#noteText"),
+  noteSearchInput: document.querySelector("#noteSearchInput"),
+  noteSearchResults: document.querySelector("#noteSearchResults"),
+  noteDatePreview: document.querySelector("#noteDatePreview"),
+  gameWordBank: document.querySelector("#gameWordBank"),
+  gamePromptWord: document.querySelector("#gamePromptWord"),
+  gamePromptExample: document.querySelector("#gamePromptExample"),
+  gameTranslationInput: document.querySelector("#gameTranslationInput"),
+  gameWritingInput: document.querySelector("#gameWritingInput"),
+  submitGameBtn: document.querySelector("#submitGameBtn"),
+  nextGameBtn: document.querySelector("#nextGameBtn"),
+  gameFeedback: document.querySelector("#gameFeedback"),
   englishWords: document.querySelector("#englishWords"),
   chineseWords: document.querySelector("#chineseWords"),
   gameScore: document.querySelector("#gameScore"),
@@ -119,23 +171,391 @@ const nodes = {
   resetPomodoroBtn: document.querySelector("#resetPomodoroBtn"),
   pomodoroNote: document.querySelector("#pomodoroNote"),
   reviewForm: document.querySelector("#reviewForm"),
+  reviewDate: document.querySelector("#reviewDate"),
   reviewPriority: document.querySelector("#reviewPriority"),
   reviewBlocker: document.querySelector("#reviewBlocker"),
   reviewMinimum: document.querySelector("#reviewMinimum")
 };
 
 const NOTE_KEY = "smart-study-note-v1";
-const wordPairs = [
-  { en: "review", zh: "复习" },
-  { en: "focus", zh: "专注" },
-  { en: "effort", zh: "努力" },
-  { en: "habit", zh: "习惯" },
-  { en: "progress", zh: "进步" },
-  { en: "memory", zh: "记忆" }
+const dailyEnglishStories = [
+  {
+    title: "A Quiet Hour Before Sunrise",
+    text: "Before sunrise, Lin opened her notebook and wrote down three small goals for the day. She knew that motivation would not always arrive on time, so she built a routine that could carry her forward when her mood was uncertain. For the first twenty minutes, she reviewed yesterday's mistakes without checking the answers. Then she read one short passage aloud, marking useful phrases in blue. By the time the city became noisy, her mind had already entered a steady rhythm. Progress, she realized, was not a sudden gift but a quiet result of returning to the desk again and again.",
+    translation: "日出前，林打开笔记本，写下当天的三个小目标。她知道动力并不总会准时出现，所以建立了一套习惯，让自己在状态不稳定时也能继续前进。前二十分钟，她不看答案，先复盘昨天的错误。接着，她朗读一篇短文，并用蓝色标出有用表达。等城市渐渐喧闹起来时，她的思绪已经进入稳定节奏。她意识到，进步不是突然降临的礼物，而是一次又一次回到书桌前所产生的安静结果。",
+    grammar: [
+      ["Before sunrise", "时间状语放在句首，交代故事发生的时间。"],
+      ["She knew that...", "that 引导宾语从句，说明“她知道”的具体内容。"],
+      ["so she built...", "so 连接因果关系，前半句是原因，后半句是行动结果。"],
+      ["when her mood was uncertain", "时间状语从句，也带有条件意味。"],
+      ["marking useful phrases in blue", "现在分词短语，补充说明朗读时同时进行的动作。"],
+      ["not a sudden gift but...", "not...but... 强调进步不是偶然，而是重复行动的结果。"]
+    ]
+  },
+  {
+    title: "The Seat by the Window",
+    text: "Every afternoon, Chen chose the same seat by the library window. At first, he liked it simply because the light was warm and the corner was quiet. Later, the seat became a signal to his mind: once he sat down, he would stop checking messages and begin the hardest task first. Some days he finished a full chapter; other days he solved only three problems. Still, he recorded each attempt in a small notebook. Looking back after a month, he found that the ordinary seat had quietly trained him to begin before he felt ready.",
+    translation: "每天下午，陈都会选择图书馆窗边的同一个座位。起初，他喜欢那里只是因为光线温暖、角落安静。后来，这个座位成了给大脑的信号：一坐下，他就停止查看消息，先开始最难的任务。有些日子他能完成整章内容，有些日子只解出三道题。即便如此，他仍把每次尝试记录在小本子里。一个月后回头看，他发现这个普通座位已经悄悄训练他在准备好之前就开始行动。",
+    grammar: [
+      ["At first", "表示时间顺序，常用于引出最初的状态。"],
+      ["because the light was warm", "because 引导原因状语从句。"],
+      ["once he sat down", "once 引导时间条件从句，表示“一旦”。"],
+      ["the hardest task first", "first 作副词，强调优先顺序。"],
+      ["Looking back after a month", "现在分词短语作状语，说明回顾时的发现。"]
+    ]
+  },
+  {
+    title: "A Mistake Worth Keeping",
+    text: "Mia used to erase every wrong answer as soon as she found it. She thought a clean page meant a clear mind. One evening, however, her teacher asked her to keep the mistakes and write a short reason beside each one. The page soon looked messy, but it also became useful. She noticed that most errors came from rushing through the question, not from lacking knowledge. The next week, she slowed down before choosing an answer. Her score improved, and more importantly, she stopped treating mistakes as proof that she was failing.",
+    translation: "米娅过去一发现错题就立刻擦掉。她以为干净的页面代表清晰的思路。然而有一天晚上，老师让她保留错误，并在旁边写下简短原因。页面很快变得杂乱，但也变得有用。她发现大多数错误来自匆忙读题，而不是知识不足。下一周，她在选择答案前放慢了速度。她的分数提高了，更重要的是，她不再把错误当作失败的证明。",
+    grammar: [
+      ["used to erase", "used to 表示过去常常做某事。"],
+      ["as soon as", "引导时间状语从句，表示“一……就……”。"],
+      ["however", "转折副词，用来引出变化或对比。"],
+      ["not from lacking knowledge", "not from... 表示否定某个原因。"],
+      ["more importantly", "插入语，用来强调后面的观点更重要。"]
+    ]
+  },
+  {
+    title: "Ten Minutes of Courage",
+    text: "When the textbook looked too thick, Aaron promised himself only ten minutes. He would read one page, underline one definition, and close the book if he still felt tired. Surprisingly, ten minutes often became thirty. The hardest part was not understanding everything; it was opening the book when his mind wanted to escape. By lowering the starting line, he gave himself a chance to enter the task. This small rule did not make study effortless, but it changed his relationship with difficult work. He learned that courage can be brief and still be real.",
+    translation: "当教材看起来太厚时，亚伦只要求自己坚持十分钟。他会读一页，划出一个定义；如果仍然觉得累，就合上书。令人意外的是，十分钟常常变成三十分钟。最难的部分不是理解一切，而是在大脑想逃避时打开书。通过降低开始的门槛，他给了自己进入任务的机会。这个小规则没有让学习变得毫不费力，但改变了他与困难任务的关系。他明白，勇气可以很短暂，却依然真实。",
+    grammar: [
+      ["When the textbook looked too thick", "when 引导时间状语从句。"],
+      ["if he still felt tired", "if 引导条件状语从句。"],
+      ["not understanding everything; it was opening...", "not...it was... 对真正难点进行强调。"],
+      ["By lowering the starting line", "by doing 表示通过某种方式。"],
+      ["that courage can be brief", "that 引导宾语从句。"]
+    ]
+  },
+  {
+    title: "The Sound of Review",
+    text: "Nora discovered that review became easier when she used her own voice. After learning a new concept, she closed the book and explained it as if she were teaching a younger student. If her explanation stopped halfway, she knew exactly which part needed another look. The method felt awkward at first, especially in a quiet room, but it quickly exposed weak points that silent reading had hidden. Over time, her voice became a useful mirror. It showed whether an idea was truly clear or merely familiar because she had seen it many times.",
+    translation: "诺拉发现，当她使用自己的声音时，复习会变得更容易。学完一个新概念后，她合上书，像在教低年级学生一样解释它。如果解释到一半停住，她就清楚知道哪一部分需要再看。这个方法起初有些尴尬，尤其是在安静的房间里，但它很快暴露出默读掩盖的薄弱点。随着时间推移，她的声音变成了一面有用的镜子。它能显示一个想法是真的清楚，还是只是因为看过很多遍而显得熟悉。",
+    grammar: [
+      ["when she used her own voice", "when 引导时间状语从句。"],
+      ["as if she were teaching", "as if 引导方式状语从句，were 表示虚拟语气。"],
+      ["which part needed another look", "which 引导宾语从句。"],
+      ["that silent reading had hidden", "that 引导定语从句，修饰 weak points。"],
+      ["whether...or...", "表示两种可能之间的判断。"]
+    ]
+  },
+  {
+    title: "A Plan That Can Bend",
+    text: "David once believed that a good plan should be strict. If he missed one task, he felt the whole week had failed. Later, he learned to design a plan that could bend without breaking. He marked two tasks as essential and left one task as optional each day. When unexpected homework appeared, he could still protect the most important work. This flexible structure made him calmer, not lazier. Because the plan allowed ordinary problems to happen, he no longer abandoned it after a difficult day. A realistic plan, he found, was easier to trust.",
+    translation: "大卫曾经相信，好计划就应该严格。如果漏掉一个任务，他就觉得整周都失败了。后来，他学会设计一种可以弯曲却不会断裂的计划。每天他把两个任务标为必做，把一个任务设为可选。当意外作业出现时，他仍能保护最重要的学习内容。这种灵活结构让他更平静，而不是更懒散。因为计划允许普通问题发生，他不再在困难的一天后放弃它。他发现，现实一点的计划更值得信任。",
+    grammar: [
+      ["that a good plan should be strict", "that 引导宾语从句。"],
+      ["If he missed one task", "if 引导条件状语从句。"],
+      ["without breaking", "介词 without 后接动名词。"],
+      ["not lazier", "not 用于否定对比，说明灵活不等于懒散。"],
+      ["Because the plan allowed...", "because 引导原因状语从句。"]
+    ]
+  },
+  {
+    title: "The Question List",
+    text: "Instead of copying long notes, Sara kept a list of questions. Each question began with why, how, or what if. Why does this formula work? How would I explain this paragraph in my own words? What if the condition changes? The list made her study sessions more active. It also helped her notice the difference between recognizing an answer and producing one. Before each test, she covered the explanations and tried to answer the questions aloud. Some answers were imperfect, but the effort made her thinking sharper and her memory more reliable.",
+    translation: "萨拉没有抄写大段笔记，而是保留一张问题清单。每个问题都以 why、how 或 what if 开头。这个公式为什么成立？我如何用自己的话解释这段文字？如果条件改变会怎样？这张清单让她的学习过程更主动。它还帮助她看清“认得答案”和“自己说出答案”之间的差别。每次考试前，她遮住解释，试着大声回答这些问题。有些答案并不完美，但这种努力让她的思考更清晰，记忆也更可靠。",
+    grammar: [
+      ["Instead of copying", "instead of 后接动名词，表示“不做……而做……”。"],
+      ["Each question began with", "begin with 表示“以……开始”。"],
+      ["between recognizing...and producing...", "between...and... 连接两个并列动名词。"],
+      ["Before each test", "时间状语，说明动作发生在考试前。"],
+      ["made her thinking sharper", "make + 宾语 + 形容词，表示使某物变得怎样。"]
+    ]
+  }
 ];
+const DAILY_ENGLISH_TOTAL = 365;
+const dailyEnglishSubjects = [
+  ["AI Study Partner", "AI学习助手", "a student used an AI tool to compare two explanations before writing her own summary", "人工智能辅助学习"],
+  ["Green Campus", "绿色校园", "a class redesigned its recycling corner after measuring how much paper was wasted", "校园环保"],
+  ["Digital Payment", "数字支付", "a volunteer helped an elderly neighbor learn to pay safely with a phone", "数字生活"],
+  ["Public Health", "公共健康", "a school club created posters that encouraged students to sleep earlier before exams", "健康校园"],
+  ["Space News", "航天新闻", "students followed a space mission and discussed why patience matters in science", "航天探索"],
+  ["Smart Library", "智慧图书馆", "a library introduced quiet sensors and seat reservations to reduce waiting time", "智慧校园"],
+  ["Online Course", "在线课程", "a rural student joined a free online lecture and asked her first question in public", "教育公平"],
+  ["City Transport", "城市交通", "commuters tried a new bus route that made reading on the way possible", "绿色出行"],
+  ["Food Waste", "食物浪费", "a cafeteria team weighed leftovers and changed the menu with student feedback", "节约粮食"],
+  ["Community Service", "社区服务", "college students taught children how to organize homework with simple checklists", "志愿服务"],
+  ["Traditional Culture", "传统文化", "a young designer used local patterns in a modern poster for a school exhibition", "文化传承"],
+  ["Mental Health", "心理健康", "a student learned to ask for help before pressure became too heavy", "情绪管理"],
+  ["Climate Adaptation", "气候适应", "a neighborhood planted more trees after several unusually hot afternoons", "气候变化"],
+  ["Data Privacy", "数据隐私", "friends discussed why a free app still deserved careful privacy settings", "网络安全"],
+  ["Rural Revitalization", "乡村振兴", "a graduate returned home to help farmers sell fruit through short videos", "乡村发展"],
+  ["Museum Night", "博物馆夜游", "visitors used audio guides to understand an old object from several angles", "公共文化"],
+  ["Sports Habit", "运动习惯", "a tired student began with ten minutes of walking and slowly built endurance", "健康生活"],
+  ["Language Corner", "英语角", "two shy learners practiced asking questions instead of memorizing perfect speeches", "语言学习"],
+  ["Exam Fairness", "考试公平", "teachers discussed how clear rules could reduce anxiety during an important test", "教育评价"],
+  ["Ocean Protection", "海洋保护", "students tracked plastic bottles on a beach and proposed a small deposit system", "海洋保护"],
+  ["Reading Festival", "阅读节", "a school held a book exchange where every note carried a personal recommendation", "阅读推广"],
+  ["Robot Helper", "机器人助手", "a service robot guided visitors while staff focused on difficult requests", "智能服务"],
+  ["Energy Saving", "节能行动", "a dormitory compared electricity bills and changed small daily habits", "节能减排"],
+  ["Local Market", "本地市集", "young people interviewed sellers to understand how prices and weather were connected", "社会观察"],
+  ["Creative Writing", "创意写作", "a student turned a news headline into a short story about responsibility", "写作训练"],
+  ["Inclusive Design", "包容设计", "a team improved signs on campus so that new students could find rooms faster", "无障碍设计"],
+  ["Science Fair", "科学展", "a group explained a simple experiment to children using everyday objects", "科普表达"],
+  ["Part-time Work", "兼职经历", "a student learned time management while working at a weekend bookstore", "劳动教育"],
+  ["Cultural Exchange", "文化交流", "international students cooked together and compared the stories behind family dishes", "跨文化交流"],
+  ["Emergency Skills", "应急技能", "a training session showed students how to respond calmly during a sudden alarm", "安全教育"],
+  ["Digital Reading", "数字阅读", "a reader used an e-book app but kept a paper notebook for deeper thinking", "数字阅读"],
+  ["Urban Garden", "城市花园", "neighbors turned an empty corner into a small garden for children and seniors", "社区治理"],
+  ["Career Choice", "职业选择", "a senior student interviewed workers before deciding what kind of job suited him", "职业规划"],
+  ["Science Podcast", "科学播客", "a podcast helped classmates discuss difficult discoveries in plain language", "媒体素养"],
+  ["Water Saving", "节水行动", "a school measured water use and repaired small leaks that had been ignored", "资源节约"],
+  ["Heritage Walk", "历史街区", "students walked through an old street and recorded changes in local life", "城市记忆"],
+  ["Volunteer Tutor", "支教志愿者", "a volunteer learned that encouragement could be as important as correct answers", "教育支持"],
+  ["Digital Museum", "数字博物馆", "an online exhibition allowed students to compare artifacts without leaving school", "数字文化"],
+  ["Healthy Canteen", "健康食堂", "students voted for lighter meals and learned how choices shape public service", "饮食健康"],
+  ["Shared Bike", "共享单车", "a class studied why convenience also requires users to follow public rules", "公共秩序"],
+  ["Media Rumor", "网络谣言", "a student checked three sources before sharing a surprising message", "信息辨别"],
+  ["Wildlife Camera", "野生动物相机", "researchers used cameras to observe animals without disturbing their habitat", "生态保护"],
+  ["Micro Habit", "微习惯", "a learner used five-minute reviews to protect progress on busy days", "习惯养成"],
+  ["Campus Debate", "校园辩论", "a debate taught students to listen carefully before defending their own opinion", "思辨能力"],
+  ["Old Book Repair", "古籍修复", "a repair worker showed how patience can protect knowledge from disappearing", "文化保护"],
+  ["New Energy Car", "新能源汽车", "a family planned a trip around charging stations and learned about clean transport", "科技生活"],
+  ["Morning Market", "早市故事", "a teenager helped grandparents record prices and understand neighborhood changes", "生活观察"],
+  ["Online Meeting", "线上会议", "a team learned to make remote discussion shorter, clearer and more respectful", "数字协作"],
+  ["Waste Sorting", "垃圾分类", "a volunteer station made confusing labels easier for busy residents to follow", "城市管理"],
+  ["Personal Budget", "个人预算", "a freshman tracked small expenses and discovered where his money really went", "财商教育"],
+  ["Cloud Classroom", "云课堂", "a teacher used recorded lessons to give absent students a fair second chance", "教育技术"],
+  ["Local Library", "社区图书馆", "children visited a tiny library that stayed open late during exam season", "公共服务"],
+  ["Senior Smartphone", "银发数字课", "teenagers taught seniors how to avoid suspicious links and false discounts", "数字包容"],
+  ["Green Factory", "绿色工厂", "visitors saw how cleaner machines reduced noise, smoke and waste at the same time", "产业升级"],
+  ["Rainy Commute", "雨天通勤", "a student noticed how small acts of patience kept a crowded station orderly", "公共文明"],
+  ["Campus Farm", "校园农场", "students grew vegetables and finally understood the cost of one simple meal", "劳动实践"],
+  ["News Translation", "新闻翻译", "a class translated a report and learned that accuracy matters more than speed", "翻译能力"],
+  ["Open Source", "开源项目", "a beginner fixed a small typo and felt connected to a global community", "开放协作"],
+  ["Smart Watch", "智能手表", "a runner used health data wisely instead of letting every number control her mood", "科技与健康"],
+  ["Art Therapy", "艺术疗愈", "students used drawing to express pressure that was difficult to explain in words", "心理表达"],
+  ["Neighborhood Map", "社区地图", "residents marked useful places so newcomers could settle in more easily", "社区互助"],
+  ["Clean River", "清洁河流", "a survey helped students see how daily behavior affected water far away", "环境责任"],
+  ["Short Video", "短视频学习", "a learner turned quick videos into notes instead of letting them steal attention", "媒介使用"],
+  ["Exam Room", "考场心态", "a candidate used slow breathing to regain focus before reading the first question", "考试心理"],
+  ["Coffee Shop Study", "咖啡馆学习", "friends tested whether background noise helped or harmed their concentration", "学习环境"],
+  ["Young Researcher", "青年研究者", "a student repeated one experiment many times before trusting the result", "科学精神"],
+  ["Public Speaking", "公众表达", "a quiet student practiced one clear opening sentence before giving a presentation", "表达能力"],
+  ["Repaired Bicycle", "修车经历", "a broken bicycle taught a student to ask practical questions before giving up", "解决问题"],
+  ["Festival Train", "节日列车", "travelers shared snacks and stories during a long ride home", "社会温情"],
+  ["Campus App", "校园应用", "students suggested a simpler app design after watching new users struggle", "用户体验"],
+  ["Forest Class", "森林课堂", "a biology lesson outdoors made textbook words easier to remember", "自然教育"],
+  ["Quiet Leadership", "安静领导力", "a group leader solved conflict by asking each member what they needed", "团队合作"]
+];
+const dailyEnglishOpenings = [
+  "This week,",
+  "On a busy morning,",
+  "During a school project,",
+  "After reading a recent report,",
+  "In a small community,"
+];
+const dailyEnglishLessons = [
+  ["careful observation can turn ordinary events into useful knowledge", "细致观察能把普通事件变成有用知识"],
+  ["technology works best when people use it with judgment and kindness", "当人们带着判断力和善意使用技术时，它最能发挥作用"],
+  ["small choices often reveal a person's sense of responsibility", "细小选择常常体现一个人的责任感"],
+  ["real progress usually begins with a question that is honestly asked", "真正的进步通常始于一个真诚提出的问题"],
+  ["public problems require patience, evidence and cooperation", "公共问题需要耐心、证据和合作"]
+];
+const dailyEnglishIssueMap = {
+  "人工智能辅助学习": ["responsible use of artificial intelligence in education", "教育中负责任地使用人工智能"],
+  "校园环保": ["environmental protection on campus", "校园环保"],
+  "数字生活": ["safe and convenient digital life", "安全便捷的数字生活"],
+  "健康校园": ["healthy routines at school", "校园健康习惯"],
+  "航天探索": ["space exploration and scientific patience", "航天探索与科学耐心"],
+  "智慧校园": ["smart campus services", "智慧校园服务"],
+  "教育公平": ["fair access to education", "教育公平"],
+  "绿色出行": ["green transport in daily life", "日常生活中的绿色出行"],
+  "节约粮食": ["reducing food waste", "减少食物浪费"],
+  "志愿服务": ["community service and responsibility", "志愿服务与责任"],
+  "文化传承": ["the protection of traditional culture", "传统文化保护"],
+  "情绪管理": ["mental health and emotional balance", "心理健康与情绪平衡"],
+  "气候变化": ["climate change and local action", "气候变化与本地行动"],
+  "网络安全": ["data privacy and online safety", "数据隐私与网络安全"],
+  "乡村发展": ["rural development in the digital age", "数字时代的乡村发展"],
+  "公共文化": ["public culture and museum learning", "公共文化与博物馆学习"],
+  "健康生活": ["healthy habits and regular exercise", "健康习惯与规律运动"],
+  "语言学习": ["active practice in language learning", "语言学习中的主动练习"],
+  "教育评价": ["fair rules in educational assessment", "教育评价中的公平规则"],
+  "海洋保护": ["ocean protection and plastic reduction", "海洋保护与减少塑料"],
+  "阅读推广": ["reading habits and book sharing", "阅读习惯与图书分享"],
+  "智能服务": ["robots and human-centered service", "机器人与以人为本的服务"],
+  "节能减排": ["energy saving and carbon reduction", "节能减排"],
+  "社会观察": ["observing social changes in local life", "从本地生活观察社会变化"],
+  "写作训练": ["creative writing and responsible expression", "创意写作与负责任表达"],
+  "无障碍设计": ["inclusive design in public spaces", "公共空间中的包容设计"],
+  "科普表达": ["science communication in simple language", "用简单语言进行科普表达"],
+  "劳动教育": ["work experience and time management", "劳动经历与时间管理"],
+  "跨文化交流": ["cultural exchange and mutual understanding", "跨文化交流与相互理解"],
+  "安全教育": ["emergency skills and calm action", "应急技能与冷静行动"],
+  "数字阅读": ["digital reading and deep thinking", "数字阅读与深度思考"],
+  "社区治理": ["community gardens and shared spaces", "社区花园与共享空间"],
+  "职业规划": ["career planning through real interviews", "通过真实访谈进行职业规划"],
+  "媒体素养": ["media literacy and scientific information", "媒体素养与科学信息"],
+  "资源节约": ["saving water and public resources", "节约用水与公共资源"],
+  "城市记忆": ["urban memory and historical streets", "城市记忆与历史街区"],
+  "教育支持": ["volunteer tutoring and encouragement", "支教志愿服务与鼓励"],
+  "数字文化": ["digital museums and cultural learning", "数字博物馆与文化学习"],
+  "饮食健康": ["healthy meals and student choices", "健康饮食与学生选择"],
+  "公共秩序": ["shared bikes and public rules", "共享单车与公共规则"],
+  "信息辨别": ["identifying rumors and checking sources", "辨别谣言与核查来源"],
+  "生态保护": ["wildlife observation and habitat protection", "野生动物观察与栖息地保护"],
+  "习惯养成": ["micro habits and steady progress", "微习惯与稳定进步"],
+  "思辨能力": ["debate and critical thinking", "辩论与批判性思维"],
+  "文化保护": ["repairing old books and protecting knowledge", "古籍修复与知识保护"],
+  "科技生活": ["new energy cars and daily technology", "新能源汽车与日常科技"],
+  "生活观察": ["market life and social details", "市场生活与社会细节"],
+  "数字协作": ["online meetings and teamwork", "线上会议与团队合作"],
+  "城市管理": ["waste sorting and urban management", "垃圾分类与城市管理"],
+  "财商教育": ["personal budgeting and financial awareness", "个人预算与财商意识"],
+  "教育技术": ["cloud classrooms and learning support", "云课堂与学习支持"],
+  "公共服务": ["local libraries and public service", "社区图书馆与公共服务"],
+  "数字包容": ["helping seniors use digital tools", "帮助老年人使用数字工具"],
+  "产业升级": ["green factories and industrial upgrading", "绿色工厂与产业升级"],
+  "公共文明": ["patience and order in public places", "公共场所中的耐心与秩序"],
+  "劳动实践": ["campus farming and respect for labor", "校园农场与尊重劳动"],
+  "翻译能力": ["news translation and accuracy", "新闻翻译与准确性"],
+  "开放协作": ["open-source projects and global cooperation", "开源项目与全球协作"],
+  "科技与健康": ["health data and wise self-management", "健康数据与明智自我管理"],
+  "心理表达": ["art therapy and emotional expression", "艺术疗愈与情绪表达"],
+  "社区互助": ["neighborhood maps and mutual help", "社区地图与邻里互助"],
+  "环境责任": ["clean rivers and environmental responsibility", "清洁河流与环境责任"],
+  "媒介使用": ["short videos and attention management", "短视频与注意力管理"],
+  "考试心理": ["exam pressure and calm focus", "考试压力与冷静专注"],
+  "学习环境": ["study spaces and concentration", "学习环境与专注力"],
+  "科学精神": ["experiments and scientific patience", "实验与科学耐心"],
+  "表达能力": ["public speaking and clear expression", "公众表达与清晰表达"],
+  "解决问题": ["repair experience and practical questions", "修理经历与实际问题"],
+  "社会温情": ["travel stories and kindness in public life", "旅途故事与社会温情"],
+  "用户体验": ["campus apps and user experience", "校园应用与用户体验"],
+  "自然教育": ["outdoor lessons and nature education", "户外课堂与自然教育"],
+  "团队合作": ["quiet leadership and teamwork", "安静领导力与团队合作"]
+};
+const dailyEnglishGrammar = [
+  ["through a real campus example", "介词短语作方式状语，说明学生通过什么方式展开讨论。"],
+  ["because similar themes often appear...", "because 引导原因状语从句，解释为什么该话题值得关注。"],
+  ["Instead of repeating empty opinions", "instead of 后接动名词，表示“不做……而做……”。"],
+  ["questions that still needed evidence", "that 引导定语从句，修饰前面的 questions。"],
+  ["when each person offered...", "when 引导时间状语从句，说明讨论变得有用的时间条件。"],
+  ["The more carefully..., the more naturally...", "the more..., the more... 表示“越……越……”。"]
+];
+const cet6WordSource = `
+abundant|丰富的，充裕的|丰富,充裕,大量|The library offers abundant resources for independent study.
+adapt|适应，改编|适应,改编,调整|Students need to adapt their methods to different subjects.
+adequate|足够的，合格的|足够,充分,合格|Adequate preparation reduces anxiety before an exam.
+advocate|提倡，拥护；倡导者|提倡,倡导,拥护|Many teachers advocate active recall instead of passive reading.
+allocate|分配，配置|分配,配置,安排|She allocated more time to difficult chapters.
+ambiguous|模糊的，有歧义的|模糊,歧义,不明确|An ambiguous instruction may lead to different answers.
+anticipate|预期，预料|预期,预料,预计|Good learners anticipate common mistakes before practicing.
+assess|评估，评价|评估,评价,判断|Weekly tests help assess whether the plan is working.
+attribute|把……归因于；属性|归因,属性,特征|Do not attribute every failure to a lack of talent.
+comprehensive|全面的，综合的|全面,综合,完整|A comprehensive review includes concepts, examples and errors.
+concentrate|集中注意力|集中,专注,注意力|It is easier to concentrate after removing distractions.
+consistent|一致的，持续的|一致,持续,稳定|Consistent practice matters more than occasional long sessions.
+crucial|关键的，至关重要的|关键,重要,至关重要|Understanding definitions is crucial in advanced mathematics.
+derive|获得，源于，推导出|获得,源于,推导|The formula can be derived from a basic principle.
+eliminate|消除，排除|消除,排除,淘汰|Error analysis helps eliminate repeated mistakes.
+emphasize|强调，重视|强调,重视,突出|The teacher emphasized the importance of reviewing notes.
+enhance|提高，增强|提高,增强,改善|Short summaries can enhance long-term memory.
+evaluate|评价，评估|评价,评估,估计|You should evaluate your progress at the end of each week.
+inevitable|不可避免的|不可避免,必然|Some confusion is inevitable when learning a new topic.
+maintain|维持，保持|维持,保持,维护|A planner helps maintain a steady learning rhythm.
+obstacle|障碍，阻碍|障碍,阻碍,困难|A difficult chapter is an obstacle, not a dead end.
+priority|优先事项，优先权|优先,重点,优先事项|Your weakest subject should become a priority this week.
+reinforce|加强，巩固|加强,巩固,强化|Practice questions reinforce what you have just learned.
+substantial|大量的，实质性的|大量,实质,显著|A substantial improvement often comes from small daily actions.
+accumulate|积累，堆积|积累,堆积,累积|Knowledge accumulates when review is repeated over time.
+acknowledge|承认，认可，感谢|承认,认可,感谢|It is wise to acknowledge a weakness before trying to fix it.
+alternative|替代的；选择|替代,选择,备选|An alternative plan can help when the first plan fails.
+apparent|明显的，表面上的|明显,表面,显然|The apparent solution was not the most efficient one.
+approach|方法，接近，处理|方法,接近,处理|A new approach made the difficult passage easier to understand.
+approximately|大约，近似地|大约,约,近似|The task took approximately forty minutes to finish.
+capacity|能力，容量|能力,容量,承载|Daily practice increases the capacity to focus.
+category|种类，类别|种类,类别,分类|The errors were divided into several categories.
+circumstance|情况，环境|情况,环境,情形|Good decisions depend on the actual circumstances.
+collapse|倒塌，崩溃|倒塌,崩溃,瓦解|The plan may collapse if it has no room for rest.
+commitment|承诺，投入，责任|承诺,投入,责任|Long-term progress requires commitment, not only interest.
+component|组成部分，部件|组成,部分,部件|Vocabulary is only one component of language ability.
+consequence|后果，结果，影响|后果,结果,影响|Every choice has a consequence for future study.
+considerable|相当大的，可观的|相当大,可观,重要|The new method brought considerable improvement.
+constant|持续的，经常的|持续,经常,不断|Constant interruptions make deep thinking difficult.
+contrast|对比，对照|对比,对照,差异|The essay asks students to contrast two opinions.
+contribute|贡献，促成，有助于|贡献,促成,有助于|Sleep contributes to memory and attention.
+controversial|有争议的|争议,有争议,争论|The policy remains controversial among students.
+cooperate|合作，协作|合作,协作,配合|Group members must cooperate to finish the project.
+coordinate|协调，配合，统筹|协调,配合,统筹|The monitor coordinated the schedule for the whole class.
+decline|下降，拒绝，减少|下降,拒绝,减少|The number of mistakes began to decline.
+demonstrate|证明，展示，说明|证明,展示,说明|The experiment demonstrated a basic scientific principle.
+dimension|方面，维度，尺寸|方面,维度,尺寸|The problem has an economic dimension as well.
+domestic|国内的，家庭的|国内,家庭,本国|Domestic news can also provide useful writing topics.
+efficient|高效的，有效率的|高效,有效率,效率|An efficient learner checks results and adjusts quickly.
+emerge|出现，浮现，显现|出现,浮现,显现|New problems emerge when technology changes daily life.
+enable|使能够，促使|使能够,让,促使|Digital tools enable students to learn beyond the classroom.
+encounter|遇到，遭遇|遇到,遭遇,碰到|Everyone may encounter difficulty in a new field.
+essential|必要的，本质的|必要,重要,本质|Clear definitions are essential in mathematics.
+expand|扩大，扩展，拓展|扩大,扩展,拓展|Reading can expand both vocabulary and imagination.
+factor|因素，要素|因素,要素,原因|Time is only one factor in exam preparation.
+flexible|灵活的，有弹性的|灵活,弹性,可变|A flexible plan is easier to follow for months.
+fundamental|基础的，根本的|基础,根本,基本|Fundamental concepts should be reviewed first.
+generate|产生，生成，引发|产生,生成,引发|Good questions generate deeper discussion.
+guarantee|保证，担保，保障|保证,担保,保障|A plan cannot guarantee success without action.
+highlight|突出，强调，亮点|突出,强调,亮点|The teacher highlighted three common mistakes.
+identical|相同的，完全一致的|相同,一致,完全一样|The two answers are not identical in meaning.
+illustrate|说明，阐明，举例|说明,阐明,举例|The example illustrates the rule clearly.
+implement|实施，执行，落实|实施,执行,落实|The class decided to implement a new review system.
+indicate|表明，指出，显示|表明,指出,显示|The data indicate that habits changed gradually.
+individual|个人，个体的，单独的|个人,个体,单独|Each individual has a different learning rhythm.
+initial|最初的，开始的|最初,开始,初始|The initial result was not very encouraging.
+innovation|创新，革新|创新,革新,新方法|Innovation often begins with a practical problem.
+interpret|解释，理解，解读|解释,理解,解读|Students should interpret charts carefully.
+investigate|调查，研究，探究|调查,研究,探究|The group investigated the causes of food waste.
+justify|证明……合理，为……辩护|证明合理,辩护,说明理由|You need evidence to justify your opinion.
+launch|发起，启动，发射|发起,启动,发射|The school launched a reading campaign.
+modify|修改，调整，改变|修改,调整,改变|A plan should be modified after feedback.
+monitor|监测，监督，观察|监测,监督,观察|Students monitored their screen time for a week.
+mutual|相互的，共同的|相互,共同,彼此|Mutual respect makes teamwork easier.
+notion|概念，观念，想法|概念,观念,想法|The notion of success changes with experience.
+objective|目标；客观的|目标,客观,目的|An objective record is better than a vague feeling.
+obtain|获得，得到，取得|获得,得到,取得|Reliable information is not always easy to obtain.
+occupy|占据，占用，占领|占据,占用,占领|Small tasks can occupy too much attention.
+option|选择，选项，方案|选择,选项,方案|Keeping one optional task makes the plan realistic.
+participate|参加，参与，加入|参加,参与,加入|More students began to participate in the discussion.
+perceive|察觉，认为，感知|察觉,认为,感知|People may perceive the same event differently.
+phenomenon|现象，情况|现象,情况|Online learning is now a common phenomenon.
+potential|潜在的；潜力|潜在,潜力,可能|Every mistake has potential value for review.
+previous|以前的，先前的|以前,先前,之前|Previous experience can guide future decisions.
+principle|原则，原理，准则|原则,原理,准则|The principle is simple but powerful.
+proportion|比例，部分，份额|比例,部分,份额|A large proportion of time was spent reviewing.
+pursue|追求，从事，致力于|追求,从事,致力于|Many students pursue progress through steady practice.
+relevant|相关的，有关的|相关,有关,切题|Relevant examples make an argument stronger.
+reluctant|不情愿的，勉强的|不情愿,勉强,犹豫|He was reluctant to ask for help at first.
+rely|依靠，依赖，凭借|依靠,依赖,凭借|Do not rely only on rereading.
+resolve|解决，决定，下决心|解决,决定,下决心|The team resolved the problem through discussion.
+resource|资源，资料，能源|资源,资料,能源|Public libraries are valuable learning resources.
+restore|恢复，修复，还原|恢复,修复,还原|A short break can restore attention.
+significant|重要的，显著的|重要,显著,有意义|The change produced significant results.
+stimulate|刺激，激发，促进|刺激,激发,促进|Questions stimulate deeper thinking.
+strategy|策略，战略，方法|策略,战略,方法|A review strategy should fit the exam.
+sufficient|足够的，充分的|足够,充分,充足|Sufficient sleep supports memory.
+transform|转变，改造，转换|转变,改造,转换|Feedback can transform a weak essay.
+ultimate|最终的，根本的|最终,根本,极限|The ultimate goal is independent learning.
+undertake|承担，从事，着手|承担,从事,着手|The group undertook a survey on campus life.
+valid|有效的，合理的，正当的|有效,合理,正当|A valid argument needs evidence.
+vary|变化，改变，不同|变化,改变,不同|Methods vary from subject to subject.
+visible|可见的，明显的|可见,明显,看得见|Visible progress increases confidence.
+welfare|福利，幸福，福祉|福利,幸福,福祉|Public welfare depends on shared responsibility.
+`;
+const cleanCet6Words = cet6WordSource
+  .trim()
+  .split("\n")
+  .map((line) => {
+    const [word, translation, keywordText, example] = line.split("|");
+    return { word, translation, keywords: keywordText.split(","), example };
+  });
+let gameDeck = [];
+let currentGameWord = null;
+let gameRound = 0;
+let gameTotalScore = 0;
 let selectedEnglish = null;
 let selectedChinese = null;
-let matchedCount = 0;
+let matchedPairs = new Set();
 
 let doneState = loadDoneState();
 let focusState = loadObject(FOCUS_KEY);
@@ -209,6 +629,83 @@ function saveReviewState() {
   localStorage.setItem(REVIEW_KEY, JSON.stringify(reviewState));
 }
 
+function renderDailyEnglish() {
+  const startDate = new Date("2026-06-09T00:00:00");
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const dayIndex = Math.floor((todayStart - startDate) / 86400000);
+  const story = createDailyEnglishStory(dayIndex);
+  nodes.dailyEnglishTitle.textContent = story.title;
+  nodes.dailyEnglishText.textContent = story.text;
+  nodes.dailyEnglishTranslation.textContent = story.translation;
+  nodes.dailyEnglishGrammar.innerHTML = "";
+  story.grammar.forEach(([pattern, explanation]) => {
+    const item = document.createElement("p");
+    item.innerHTML = `<strong>${pattern}</strong> ${explanation}`;
+    nodes.dailyEnglishGrammar.append(item);
+  });
+}
+
+function startEntryExperience() {
+  document.body.classList.add("entry-active");
+  nodes.startLearningBtn.addEventListener("click", () => {
+    nodes.entryScreen.classList.add("hidden");
+    document.body.classList.remove("entry-active");
+  });
+}
+
+function setupEntryThemes() {
+  nodes.entryThemeGrid.innerHTML = "";
+  entryThemes.forEach((theme, index) => {
+    const button = document.createElement("button");
+    button.className = "theme-swatch";
+    button.type = "button";
+    button.title = `背景 ${index + 1}`;
+    button.style.setProperty("--swatch-bg", theme[6]);
+    button.dataset.theme = theme[0];
+    button.addEventListener("click", () => {
+      applyEntryTheme(theme[0]);
+      localStorage.setItem(THEME_KEY, theme[0]);
+    });
+    nodes.entryThemeGrid.append(button);
+  });
+  applyEntryTheme(localStorage.getItem(THEME_KEY) || entryThemes[0][0]);
+}
+
+function applyEntryTheme(themeName) {
+  const theme = entryThemes.find((item) => item[0] === themeName) || entryThemes[0];
+  const [, green, greenDark, blue, paper, entryBg] = theme;
+  const root = document.documentElement;
+  root.style.setProperty("--green", green);
+  root.style.setProperty("--green-dark", greenDark);
+  root.style.setProperty("--blue", blue);
+  root.style.setProperty("--paper", paper);
+  root.style.setProperty("--entry-bg", entryBg);
+  document.querySelectorAll(".theme-swatch").forEach((button) => {
+    button.classList.toggle("active", button.dataset.theme === theme[0]);
+  });
+}
+
+function createDailyEnglishStory(dayIndex) {
+  const index = ((dayIndex % DAILY_ENGLISH_TOTAL) + DAILY_ENGLISH_TOTAL) % DAILY_ENGLISH_TOTAL;
+  const subject = dailyEnglishSubjects[index % dailyEnglishSubjects.length];
+  const opening = dailyEnglishOpenings[index % dailyEnglishOpenings.length];
+  const openingCn = {
+    "This week,": "本周，",
+    "On a busy morning,": "在一个忙碌的早晨，",
+    "During a school project,": "在一次学校项目中，",
+    "After reading a recent report,": "读完一份近期报道后，",
+    "In a small community,": "在一个小社区里，"
+  }[opening];
+  const lesson = dailyEnglishLessons[index % dailyEnglishLessons.length];
+  const [issueEn, issueCn] = dailyEnglishIssueMap[subject[3]] || ["a common college English topic", subject[3]];
+  const grammar = dailyEnglishGrammar;
+  const title = `${String(index + 1).padStart(3, "0")} ${subject[0]}`;
+  const text = `${opening} a class explored ${issueEn} through a real campus example. The teacher asked students to connect the case with college English reading and writing, because similar themes often appear in exams. Instead of repeating empty opinions, they observed details, compared different views and wrote down questions that still needed evidence. The discussion became more useful when each person offered one practical suggestion. By the end of the activity, they understood that ${lesson[0]}. The more carefully they looked at real life, the more naturally they found ideas for clear writing.`;
+  const translation = `${openingCn}一个班级通过真实的校园案例探讨了“${issueCn}”。老师要求学生把这个案例和大学英语阅读、写作联系起来，因为类似主题常出现在考试中。学生们没有重复空泛观点，而是观察细节、比较不同看法，并写下仍需要证据支持的问题。当每个人都提出一个实际建议时，讨论变得更有价值。活动结束时，他们明白了：${lesson[1]}。他们越仔细观察真实生活，就越自然地找到清晰写作的素材。`;
+  return { title, text, translation, grammar };
+}
+
 function addFocusMinutes(subject, minutes) {
   const key = isoDate(new Date());
   focusState[key] ||= {};
@@ -223,6 +720,15 @@ function getActiveBook() {
 
 function selectedLibraryYear() {
   return currentYearFilter === "all" ? today.getFullYear() : Number(currentYearFilter);
+}
+
+function normalizeTitle(title) {
+  return title.replace(/\s+/g, "").toLowerCase();
+}
+
+function findDuplicateBook(title, ignoredId = "") {
+  const normalizedTitle = normalizeTitle(title);
+  return state.books.find((book) => book.id !== ignoredId && normalizeTitle(book.title) === normalizedTitle);
 }
 
 function parseChapters(text) {
@@ -304,14 +810,29 @@ function daysUntil(dateString) {
 function renderBooks() {
   nodes.bookList.innerHTML = "";
   renderYearFilter();
-  const visibleBooks =
+  const booksInYear =
     currentYearFilter === "all"
       ? state.books
       : state.books.filter((book) => String(book.year) === String(currentYearFilter));
+  const query = bookSearchQuery.trim().toLowerCase();
+  const visibleBooks = query
+    ? booksInYear.filter((book) => {
+        const chapterText = book.chapters.map((chapter) => chapter.name).join(" ");
+        return `${book.title} ${book.goal} ${chapterText}`.toLowerCase().includes(query);
+      })
+    : booksInYear;
   nodes.bookCount.textContent = visibleBooks.length;
 
   if (!visibleBooks.some((book) => book.id === activeId) && visibleBooks.length) {
     activeId = visibleBooks[0].id;
+  }
+
+  if (!visibleBooks.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-book-list";
+    empty.textContent = query ? "没有找到匹配教材。" : "这个年份还没有教材。";
+    nodes.bookList.append(empty);
+    return;
   }
 
   visibleBooks.forEach((book) => {
@@ -737,55 +1258,22 @@ function roundRect(ctx, x, y, width, height, radius) {
 }
 
 function importBook(book) {
+  const duplicate = findDuplicateBook(book.title);
+  if (duplicate) {
+    activeId = duplicate.id;
+    if (nodes.quickAddStatus) nodes.quickAddStatus.textContent = `“${duplicate.title}”已存在，已为你切换到这本教材。`;
+    saveState();
+    render();
+    document.querySelector(".planner").scrollIntoView({ behavior: "smooth", block: "start" });
+    return false;
+  }
   state.books.push(book);
   activeId = book.id;
+  if (nodes.quickAddStatus) nodes.quickAddStatus.textContent = `已添加“${book.title}”，可以继续编辑考试日期、章节和难度。`;
   saveState();
   render();
   document.querySelector(".planner").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function renderImportResults(results, query) {
-  nodes.importResults.innerHTML = "";
-
-  if (!results.length) {
-    nodes.importStatus.textContent = "没有搜到匹配结果，可以用当前关键词手动创建教材。";
-    const fallback = document.createElement("article");
-    fallback.className = "import-card";
-    fallback.innerHTML = `
-      <h3>${query}</h3>
-      <p>使用关键词生成一个可编辑教材，并自动填入通用章节模板。</p>
-      <button class="primary-btn" type="button">导入</button>
-    `;
-    fallback.querySelector("button").addEventListener("click", () => importBook(createBookFromTitle(query, { year: selectedLibraryYear() })));
-    nodes.importResults.append(fallback);
-    return;
-  }
-
-  nodes.importStatus.textContent = `找到 ${results.length} 个结果，选择最接近的一本导入。`;
-  results.forEach((item) => {
-    const author = item.author_name?.slice(0, 2).join("、") || "作者未知";
-    const year = item.first_publish_year ? `${item.first_publish_year} 年` : "年份未知";
-    const subject = item.subject?.slice(0, 3).join("、") || "暂无分类";
-    const title = item.title || query;
-    const card = document.createElement("article");
-    card.className = "import-card";
-    card.innerHTML = `
-      <h3>${title}</h3>
-      <p>${author} · ${year}</p>
-      <p>${subject}</p>
-      <button class="primary-btn" type="button">导入</button>
-    `;
-    card.querySelector("button").addEventListener("click", () => {
-      importBook(
-        createBookFromTitle(title, {
-          year: selectedLibraryYear(),
-          subject,
-          goal: `目标：围绕《${title}》建立章节框架，按难度逐步完成复习与检测。`
-        })
-      );
-    });
-    nodes.importResults.append(card);
-  });
+  return true;
 }
 
 function render() {
@@ -810,22 +1298,110 @@ function closeModal(modal) {
 
 function loadNote() {
   try {
-    return JSON.parse(localStorage.getItem(NOTE_KEY)) || {};
+    const saved = JSON.parse(localStorage.getItem(NOTE_KEY)) || {};
+    if (saved.entries) return saved;
+    if (saved.text || saved.bg || saved.font || saved.size || saved.color) {
+      return {
+        settings: {
+          bg: saved.bg || "white",
+          font: saved.font || "'Microsoft YaHei', sans-serif",
+          size: saved.size || "16",
+          color: saved.color || "#18201f"
+        },
+        entries: {
+          [isoDate(new Date())]: saved.text || ""
+        }
+      };
+    }
+    return { settings: {}, entries: {} };
   } catch {
-    return {};
+    return { settings: {}, entries: {} };
   }
 }
 
+function getNoteState() {
+  const note = loadNote();
+  note.settings ||= {};
+  note.entries ||= {};
+  note.recentDates ||= Object.entries(note.entries)
+    .filter(([, text]) => text.trim())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 2)
+    .map(([dateKey]) => dateKey);
+  return note;
+}
+
+function touchRecentNoteDate(dateKey) {
+  const note = getNoteState();
+  note.recentDates = [dateKey, ...(note.recentDates || []).filter((item) => item !== dateKey)].slice(0, 2);
+  localStorage.setItem(NOTE_KEY, JSON.stringify(note));
+}
+
 function saveNote() {
+  const note = getNoteState();
+  note.settings = {
+    bg: nodes.noteBg.value,
+    font: nodes.noteFont.value,
+    size: nodes.noteSize.value,
+    color: nodes.noteColor.value
+  };
+  note.entries[nodes.noteDate.value || isoDate(new Date())] = nodes.noteText.value;
+  note.recentDates = [nodes.noteDate.value || isoDate(new Date()), ...(note.recentDates || []).filter((item) => item !== (nodes.noteDate.value || isoDate(new Date())))].slice(0, 2);
+  localStorage.setItem(NOTE_KEY, JSON.stringify(note));
+  renderNoteSearchResults();
+}
+
+function loadNoteForDate(dateKey) {
+  const note = getNoteState();
+  nodes.noteDate.value = dateKey;
+  nodes.noteText.value = note.entries[dateKey] || "";
+  touchRecentNoteDate(dateKey);
+  renderNoteSearchResults();
+  showNotePreview(dateKey);
+}
+
+function renderNoteSearchResults() {
+  const note = getNoteState();
+  const query = nodes.noteSearchInput.value.trim().toLowerCase();
+  const entries = (note.recentDates || [])
+    .map((dateKey) => [dateKey, note.entries[dateKey] || ""])
+    .filter(([dateKey, text]) => !query || dateKey.includes(query) || text.toLowerCase().includes(query))
+    .slice(0, 2);
+
+  nodes.noteSearchResults.innerHTML = "";
+  if (!entries.length) {
+    nodes.noteSearchResults.textContent = query ? "最近两次里没有匹配记录。" : "暂无最近快捷记录。";
+    return;
+  }
+
+  entries.forEach(([dateKey, text]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "note-result";
+    button.innerHTML = `<strong>${dateKey}</strong><span>${text.slice(0, 32) || "空白记事"}</span>`;
+    button.addEventListener("click", () => loadNoteForDate(dateKey));
+    button.addEventListener("mouseenter", () => showNotePreview(dateKey));
+    nodes.noteSearchResults.append(button);
+  });
+}
+
+function showNotePreview(dateKey) {
+  const note = getNoteState();
+  const text = (note.entries[dateKey] || "").trim();
+  nodes.noteDatePreview.textContent = text ? `${dateKey}：${text.slice(0, 90)}` : `${dateKey} 暂无记事内容。`;
+}
+
+function persistNoteSettings() {
+  const note = getNoteState();
+  note.settings = {
+    bg: nodes.noteBg.value,
+    font: nodes.noteFont.value,
+    size: nodes.noteSize.value,
+    color: nodes.noteColor.value
+  };
   localStorage.setItem(
     NOTE_KEY,
-    JSON.stringify({
-      text: nodes.noteText.value,
-      bg: nodes.noteBg.value,
-      font: nodes.noteFont.value,
-      size: nodes.noteSize.value,
-      color: nodes.noteColor.value
-    })
+    JSON.stringify(note)
   );
 }
 
@@ -835,17 +1411,20 @@ function applyNoteStyle() {
   nodes.noteText.style.fontFamily = nodes.noteFont.value;
   nodes.noteText.style.fontSize = `${nodes.noteSize.value}px`;
   nodes.noteText.style.color = nodes.noteColor.value;
-  saveNote();
+  persistNoteSettings();
 }
 
 function setupNote() {
-  const note = loadNote();
-  nodes.noteText.value = note.text || "";
-  nodes.noteBg.value = note.bg || "white";
-  nodes.noteFont.value = note.font || "'Microsoft YaHei', sans-serif";
-  nodes.noteSize.value = note.size || "16";
-  nodes.noteColor.value = note.color || "#18201f";
+  const note = getNoteState();
+  const settings = note.settings || {};
+  nodes.noteDate.value = isoDate(new Date());
+  nodes.noteText.value = note.entries?.[nodes.noteDate.value] || "";
+  nodes.noteBg.value = settings.bg || "white";
+  nodes.noteFont.value = settings.font || "'Microsoft YaHei', sans-serif";
+  nodes.noteSize.value = settings.size || "16";
+  nodes.noteColor.value = settings.color || "#18201f";
   applyNoteStyle();
+  renderNoteSearchResults();
 
   nodes.noteBg.addEventListener("change", () => {
     const defaults = { white: "#18201f", black: "#f6f7f3", beige: "#2d261d" };
@@ -856,6 +1435,9 @@ function setupNote() {
     control.addEventListener("input", applyNoteStyle);
     control.addEventListener("change", applyNoteStyle);
   });
+  nodes.noteDate.addEventListener("change", () => loadNoteForDate(nodes.noteDate.value || isoDate(new Date())));
+  nodes.noteDate.addEventListener("mouseenter", () => showNotePreview(nodes.noteDate.value || isoDate(new Date())));
+  nodes.noteSearchInput.addEventListener("input", renderNoteSearchResults);
   nodes.noteText.addEventListener("input", saveNote);
 }
 
@@ -863,32 +1445,27 @@ function shuffle(items) {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function resetSelection() {
-  selectedEnglish?.classList.remove("selected");
-  selectedChinese?.classList.remove("selected");
+function setupGame() {
+  gameDeck = shuffle(cleanCet6Words).slice(0, 6);
+  gameRound = 0;
+  gameTotalScore = 0;
   selectedEnglish = null;
   selectedChinese = null;
-}
-
-function checkMatch() {
-  if (!selectedEnglish || !selectedChinese) return;
-
-  if (selectedEnglish.dataset.pair === selectedChinese.dataset.pair) {
-    selectedEnglish.classList.add("matched");
-    selectedChinese.classList.add("matched");
-    selectedEnglish.disabled = true;
-    selectedChinese.disabled = true;
-    matchedCount += 1;
-    nodes.gameScore.textContent = `得分：${matchedCount}`;
-    nodes.gameMessage.textContent =
-      matchedCount === wordPairs.length ? "全部配对完成，今天的状态很在线。" : "配对正确，继续下一组。";
-    selectedEnglish = null;
-    selectedChinese = null;
-    return;
-  }
-
-  nodes.gameMessage.textContent = "这组不匹配，再观察一下意思。";
-  setTimeout(resetSelection, 450);
+  matchedPairs = new Set();
+  nodes.gameWordBank.innerHTML = "";
+  nodes.englishWords.innerHTML = "";
+  nodes.chineseWords.innerHTML = "";
+  gameDeck.forEach((item, index) => {
+    const chip = document.createElement("span");
+    chip.className = "word-chip";
+    chip.textContent = `${index + 1}. ${item.word}`;
+    nodes.gameWordBank.append(chip);
+  });
+  shuffle(gameDeck).forEach((item) => nodes.englishWords.append(createMatchCard(item.word, item.word, "en")));
+  shuffle(gameDeck).forEach((item) => nodes.chineseWords.append(createMatchCard(item.translation, item.word, "zh")));
+  nodes.gameScore.textContent = "得分：0";
+  nodes.gameMessage.textContent = "随机抽取 6 个六级词汇：先配对，再翻译续写。";
+  nextGameQuestion();
 }
 
 function createMatchCard(text, pair, side) {
@@ -912,21 +1489,83 @@ function createMatchCard(text, pair, side) {
   return button;
 }
 
-function setupGame() {
-  nodes.englishWords.innerHTML = "";
-  nodes.chineseWords.innerHTML = "";
-  matchedCount = 0;
-  selectedEnglish = null;
-  selectedChinese = null;
-  nodes.gameScore.textContent = "得分：0";
-  nodes.gameMessage.textContent = "点击一个英文，再点击对应中文。";
+function checkMatch() {
+  if (!selectedEnglish || !selectedChinese) return;
+  if (selectedEnglish.dataset.pair === selectedChinese.dataset.pair) {
+    selectedEnglish.classList.add("matched");
+    selectedChinese.classList.add("matched");
+    selectedEnglish.disabled = true;
+    selectedChinese.disabled = true;
+    if (!matchedPairs.has(selectedEnglish.dataset.pair)) {
+      matchedPairs.add(selectedEnglish.dataset.pair);
+      gameTotalScore += 10;
+    }
+    nodes.gameScore.textContent = `得分：${gameTotalScore}`;
+    nodes.gameMessage.textContent = matchedPairs.size === gameDeck.length ? "配对完成，可以继续做翻译续写。" : "配对正确，继续找下一组。";
+    selectedEnglish = null;
+    selectedChinese = null;
+    return;
+  }
+  nodes.gameMessage.textContent = "这组不匹配，再看一下中文核心含义。";
+  setTimeout(() => {
+    selectedEnglish?.classList.remove("selected");
+    selectedChinese?.classList.remove("selected");
+    selectedEnglish = null;
+    selectedChinese = null;
+  }, 500);
+}
 
-  shuffle(wordPairs).forEach((pair) => {
-    nodes.englishWords.append(createMatchCard(pair.en, pair.en, "en"));
-  });
-  shuffle(wordPairs).forEach((pair) => {
-    nodes.chineseWords.append(createMatchCard(pair.zh, pair.en, "zh"));
-  });
+function nextGameQuestion() {
+  currentGameWord = gameDeck[gameRound % gameDeck.length];
+  nodes.gamePromptWord.textContent = currentGameWord.word;
+  nodes.gamePromptExample.textContent = currentGameWord.example;
+  nodes.gameTranslationInput.value = "";
+  nodes.gameWritingInput.value = "";
+  nodes.gameFeedback.textContent = "";
+  nodes.gameMessage.textContent = `第 ${gameRound + 1} 题：写翻译，再用它续写一句英文。`;
+}
+
+function scoreTranslation(answer, word) {
+  const text = answer.trim().toLowerCase();
+  if (!text) return 0;
+  const keywordScore = word.keywords.reduce((sum, keyword) => sum + (text.includes(keyword) ? 14 : 0), 0);
+  const lengthScore = Math.min(18, text.length * 1.5);
+  return Math.min(60, Math.round(keywordScore + lengthScore));
+}
+
+function scoreWriting(answer, word) {
+  const text = answer.trim();
+  if (!text) return 0;
+  const hasWord = text.toLowerCase().includes(word.word.toLowerCase());
+  const hasSentenceShape = /[a-zA-Z]{2,}.+\s+[a-zA-Z]{2,}/.test(text);
+  const lengthScore = Math.min(18, Math.floor(text.length / 4));
+  return Math.min(40, (hasWord ? 16 : 0) + (hasSentenceShape ? 10 : 0) + lengthScore);
+}
+
+function submitGameAnswer() {
+  if (!currentGameWord) return;
+  const translationScore = scoreTranslation(nodes.gameTranslationInput.value, currentGameWord);
+  const writingScore = scoreWriting(nodes.gameWritingInput.value, currentGameWord);
+  const roundScore = translationScore + writingScore;
+  gameTotalScore += roundScore;
+  nodes.gameScore.textContent = `得分：${gameTotalScore}`;
+  nodes.gameFeedback.innerHTML = `
+    <strong>本题 ${roundScore} 分</strong>
+    <p>参考翻译：${currentGameWord.translation}</p>
+    <p>翻译 ${translationScore}/60，续写 ${writingScore}/40。续写里用到 <strong>${currentGameWord.word}</strong> 且句子完整，分数会更高。</p>
+  `;
+  nodes.gameMessage.textContent =
+    roundScore >= 80 ? "很稳，翻译和输出都不错。" : roundScore >= 55 ? "方向对了，再把核心含义写完整一点。" : "先抓关键词，再尝试写一个完整英文句子。";
+}
+
+function advanceGame() {
+  gameRound += 1;
+  if (gameRound >= gameDeck.length) {
+    nodes.gameMessage.textContent = `本轮结束，总分 ${gameTotalScore}/${gameDeck.length * 110}。点击重新开始会换一组题。`;
+    nodes.gameFeedback.innerHTML += "<p>已经完成这一轮。可以重新开始抽取新的六级词汇。</p>";
+    return;
+  }
+  nextGameQuestion();
 }
 
 function renderPomodoroSubjects() {
@@ -983,7 +1622,8 @@ function finishPomodoro() {
 }
 
 function loadReview() {
-  const key = isoDate(new Date());
+  const key = nodes.reviewDate.value || isoDate(new Date());
+  nodes.reviewDate.value = key;
   const review = reviewState[key] || {};
   nodes.reviewPriority.value = review.priority || "";
   nodes.reviewBlocker.value = review.blocker || "";
@@ -992,7 +1632,7 @@ function loadReview() {
 
 function saveReview(event) {
   event.preventDefault();
-  const key = isoDate(new Date());
+  const key = nodes.reviewDate.value || isoDate(new Date());
   reviewState[key] = {
     priority: nodes.reviewPriority.value.trim(),
     blocker: nodes.reviewBlocker.value.trim(),
@@ -1005,7 +1645,15 @@ function saveReview(event) {
 nodes.form.addEventListener("submit", (event) => {
   event.preventDefault();
   const book = getActiveBook();
-  book.title = nodes.titleInput.value.trim();
+  const nextTitle = nodes.titleInput.value.trim();
+  const duplicate = findDuplicateBook(nextTitle, book.id);
+  if (duplicate) {
+    nodes.titleInput.setCustomValidity("已存在同名教材，请换一个名称。");
+    nodes.titleInput.reportValidity();
+    return;
+  }
+  nodes.titleInput.setCustomValidity("");
+  book.title = nextTitle;
   book.examDate = nodes.examInput.value;
   book.year = Number(nodes.yearInput.value) || today.getFullYear();
   book.dailyMinutes = Number(nodes.minutesInput.value);
@@ -1020,9 +1668,23 @@ nodes.quickAddForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const title = nodes.quickTitle.value.trim();
   if (!title) return;
+  const duplicate = findDuplicateBook(title);
+  if (duplicate) {
+    nodes.quickTitle.setCustomValidity("已存在同名教材，不能重复添加。");
+    nodes.quickTitle.reportValidity();
+    nodes.quickAddStatus.textContent = `“${duplicate.title}”已存在，不能重复添加。`;
+    return;
+  }
+  nodes.quickTitle.setCustomValidity("");
 
-  importBook(createBookFromTitle(title, { year: selectedLibraryYear() }));
-  nodes.quickTitle.value = "";
+  if (importBook(createBookFromTitle(title, { year: selectedLibraryYear() }))) {
+    nodes.quickTitle.value = "";
+  }
+});
+
+nodes.quickTitle.addEventListener("input", () => {
+  nodes.quickTitle.setCustomValidity("");
+  nodes.quickAddStatus.textContent = "输入教材名后会自动生成可编辑章节模板；已存在的同名教材不会重复添加。";
 });
 
 nodes.yearFilter.addEventListener("change", () => {
@@ -1030,47 +1692,9 @@ nodes.yearFilter.addEventListener("change", () => {
   render();
 });
 
-nodes.importSearchForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const query = nodes.importQuery.value.trim();
-  if (!query) return;
-
-  nodes.importStatus.textContent = "正在联网搜索教材...";
-  nodes.importResults.innerHTML = "";
-
-  try {
-    const encodedQuery = encodeURIComponent(query);
-    const isLocalServer = ["localhost", "127.0.0.1"].includes(location.hostname);
-    const searchUrls = [];
-
-    if (isLocalServer && location.protocol !== "file:") {
-      searchUrls.push(`/api/search-books?q=${encodedQuery}`);
-    }
-
-    if (location.protocol !== "file:") {
-      searchUrls.push(`/.netlify/functions/search-books?q=${encodedQuery}`);
-    }
-
-    searchUrls.push(`https://openlibrary.org/search.json?title=${encodedQuery}&limit=9&fields=title,author_name,first_publish_year,subject`);
-
-    let data = null;
-    for (const url of searchUrls) {
-      try {
-        const response = await fetch(url);
-        if (!response.ok) continue;
-        data = await response.json();
-        break;
-      } catch {
-        // Try the next search route before showing the offline fallback.
-      }
-    }
-
-    if (!data) throw new Error("search failed");
-    renderImportResults(data.docs || [], query);
-  } catch {
-    nodes.importStatus.textContent = "联网搜索暂时不可用，可以先用关键词导入本地教材模板。";
-    renderImportResults([], query);
-  }
+nodes.bookSearchInput.addEventListener("input", () => {
+  bookSearchQuery = nodes.bookSearchInput.value.trim();
+  renderBooks();
 });
 
 document.querySelectorAll(".segment button").forEach((button) => {
@@ -1144,12 +1768,15 @@ nodes.gameBtn.addEventListener("click", () => {
   openModal(nodes.gameModal);
 });
 nodes.restartGameBtn.addEventListener("click", setupGame);
+nodes.submitGameBtn.addEventListener("click", submitGameAnswer);
+nodes.nextGameBtn.addEventListener("click", advanceGame);
 nodes.pomodoroBtn.addEventListener("click", () => {
   renderPomodoroSubjects();
   setPomodoroDuration();
   openModal(nodes.pomodoroModal);
 });
 nodes.reviewBtn.addEventListener("click", () => {
+  nodes.reviewDate.value = isoDate(new Date());
   loadReview();
   openModal(nodes.reviewModal);
 });
@@ -1158,6 +1785,7 @@ nodes.startPomodoroBtn.addEventListener("click", startPomodoro);
 nodes.pausePomodoroBtn.addEventListener("click", pausePomodoro);
 nodes.finishPomodoroBtn.addEventListener("click", finishPomodoro);
 nodes.resetPomodoroBtn.addEventListener("click", setPomodoroDuration);
+nodes.reviewDate.addEventListener("change", loadReview);
 nodes.reviewForm.addEventListener("submit", saveReview);
 
 document.querySelectorAll(".close-modal").forEach((button) => {
@@ -1182,4 +1810,7 @@ document.addEventListener("keydown", (event) => {
 setupNote();
 setupGame();
 setPomodoroDuration();
+startEntryExperience();
+renderDailyEnglish();
 render();
+
