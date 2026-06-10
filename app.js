@@ -7,6 +7,9 @@ const ENGLISH_FAVORITES_KEY = "smart-study-english-favorites-v1";
 const MISTAKE_KEY = "smart-study-mistakes-v1";
 const DICTIONARY_KEY = "smart-study-cet6-dictionary-v1";
 const CET4_DICTIONARY_KEY = "smart-study-cet4-dictionary-v1";
+const GAME_WORDBOOK_KEY = "smart-study-game-wordbooks-v1";
+const MEMORY_KEY = "smart-study-memory-v1";
+const MEMORY_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60];
 
 const today = new Date();
 const isoDate = (date) => date.toISOString().slice(0, 10);
@@ -308,9 +311,256 @@ const nodes = {
   reviewMinimum: document.querySelector("#reviewMinimum")
 };
 
+function setupDynamicEnglishMemoryUi() {
+  const dictionaryButton = document.querySelector('[data-feature-target="dictionaryPanel"]');
+  if (dictionaryButton && !document.querySelector('[data-feature-target="cet4DictionaryPanel"]')) {
+    dictionaryButton.insertAdjacentHTML(
+      "afterend",
+      `
+        <button class="feature-btn" type="button" data-feature-target="cet4DictionaryPanel">
+          <strong>四级词库</strong>
+          <span>浏览、搜索与导入四级词汇，和六级词库一样支持分页查看。</span>
+        </button>
+      `
+    );
+  }
+
+  const cet4DictionaryButton = document.querySelector('[data-feature-target="cet4DictionaryPanel"]');
+  if ((cet4DictionaryButton || dictionaryButton) && !document.querySelector('[data-feature-target="memoryPanel"]')) {
+    (cet4DictionaryButton || dictionaryButton).insertAdjacentHTML(
+      "afterend",
+      `
+        <button class="feature-btn" type="button" data-feature-target="memoryPanel">
+          <strong>艾宾浩斯记忆</strong>
+          <span>把不会的单词收藏进复习池，按节奏自动安排复习。</span>
+        </button>
+      `
+    );
+  }
+
+  const dictionaryPanel = document.querySelector("#dictionaryPanel");
+  if (dictionaryPanel && !document.querySelector("#cet4DictionaryPanel")) {
+    dictionaryPanel.insertAdjacentHTML(
+      "afterend",
+      `
+        <section class="feature-panel" id="cet4DictionaryPanel" aria-label="四级词库">
+          <section class="dictionary-panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker">CET-4 Dictionary</p>
+                <h2>四级词库</h2>
+              </div>
+              <div class="dictionary-actions">
+                <button class="ghost-light-btn" id="importCet4DictionaryBtn" type="button">导入词库文件</button>
+                <input id="cet4DictionaryImportInput" type="file" accept="application/json,.json" hidden />
+              </div>
+            </div>
+            <div class="dictionary-search">
+              <input id="cet4DictionarySearchInput" type="search" placeholder="搜索英文、中文释义或词组" />
+              <div class="dictionary-stats" id="cet4DictionaryStats"></div>
+            </div>
+            <div class="dictionary-toolbar">
+              <label class="dictionary-page-size" for="cet4DictionaryPageSize">
+                每页显示
+                <select id="cet4DictionaryPageSize">
+                  <option value="24">24</option>
+                  <option value="48" selected>48</option>
+                  <option value="96">96</option>
+                  <option value="200">200</option>
+                  <option value="all">全部</option>
+                </select>
+              </label>
+              <div class="dictionary-pagination">
+                <button class="ghost-light-btn" id="cet4DictionaryPrevBtn" type="button">上一页</button>
+                <span id="cet4DictionaryPageInfo">第 1 / 1 页</span>
+                <button class="ghost-light-btn" id="cet4DictionaryNextBtn" type="button">下一页</button>
+              </div>
+            </div>
+            <div class="quick-add-status" id="cet4DictionaryStatus">已内置 4449 个四级单词，支持搜索、分页和后续导入补充。</div>
+            <div class="dictionary-results" id="cet4DictionaryResults"></div>
+          </section>
+        </section>
+      `
+    );
+  }
+
+  const cet4DictionaryPanel = document.querySelector("#cet4DictionaryPanel") || dictionaryPanel;
+  if (cet4DictionaryPanel && !document.querySelector("#memoryPanel")) {
+    cet4DictionaryPanel.insertAdjacentHTML(
+      "afterend",
+      `
+        <section class="feature-panel" id="memoryPanel" aria-label="艾宾浩斯记忆">
+          <section class="dictionary-panel memory-panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker">Ebbinghaus Memory</p>
+                <h2>艾宾浩斯记忆</h2>
+              </div>
+            </div>
+            <div class="memory-toolbar">
+              <label>
+                复习日期
+                <input id="memoryDateInput" type="date" />
+              </label>
+              <button class="ghost-light-btn" id="memoryTodayBtn" type="button">回到今天</button>
+            </div>
+            <div class="memory-stats" id="memoryStats"></div>
+            <div class="quick-add-status" id="memoryStatus">收藏不会的单词后，这里会按艾宾浩斯节奏给你排好复习。</div>
+            <div class="memory-list" id="memoryList"></div>
+          </section>
+        </section>
+      `
+    );
+  }
+
+  const gameActions = document.querySelector("#gameModal .game-actions");
+  if (gameActions && !document.querySelector("#favoriteGameWordBtn")) {
+    gameActions.insertAdjacentHTML(
+      "beforeend",
+      `<button class="ghost-light-btn" id="favoriteGameWordBtn" type="button">收藏当前词</button>`
+    );
+  }
+  const gameFeedback = document.querySelector("#gameFeedback");
+  if (gameFeedback && !document.querySelector("#gameWordFavoriteStatus")) {
+    gameFeedback.insertAdjacentHTML(
+      "beforebegin",
+      `<div class="game-word-status" id="gameWordFavoriteStatus">遇到不熟的单词，可以直接收藏到复习库。</div>`
+    );
+  }
+
+  const relaxActions = document.querySelector("#relaxGameModal .pixel-action-row");
+  if (relaxActions && !document.querySelector("#favoriteRelaxWordBtn")) {
+    relaxActions.insertAdjacentHTML(
+      "beforeend",
+      `<button class="ghost-light-btn" id="favoriteRelaxWordBtn" type="button">收藏当前词</button>`
+    );
+  }
+  const relaxFeedback = document.querySelector("#relaxFeedback");
+  if (relaxFeedback && !document.querySelector("#relaxWordFavoriteStatus")) {
+    relaxFeedback.insertAdjacentHTML(
+      "beforebegin",
+      `<div class="game-word-status" id="relaxWordFavoriteStatus">这关不会的单词，可以直接放进艾宾浩斯复习模块。</div>`
+    );
+  }
+  const relaxAnswerLabel = document.querySelector("#relaxGameModal .pixel-answer-label");
+  if (relaxAnswerLabel && !document.querySelector("#relaxPromptEn")) {
+    relaxAnswerLabel.insertAdjacentHTML(
+      "beforebegin",
+      `
+        <div class="pixel-judge-card">
+          <p class="pixel-judge-word" id="relaxPromptEn">challenge</p>
+          <p class="pixel-judge-note">判断这个英文单词和下方中文释义是不是同一组。</p>
+        </div>
+      `
+    );
+    relaxAnswerLabel.hidden = true;
+  }
+
+  nodes.memoryDateInput = document.querySelector("#memoryDateInput");
+  nodes.memoryTodayBtn = document.querySelector("#memoryTodayBtn");
+  nodes.memoryStats = document.querySelector("#memoryStats");
+  nodes.memoryStatus = document.querySelector("#memoryStatus");
+  nodes.memoryList = document.querySelector("#memoryList");
+  nodes.cet4DictionarySearchInput = document.querySelector("#cet4DictionarySearchInput");
+  nodes.cet4DictionaryStats = document.querySelector("#cet4DictionaryStats");
+  nodes.cet4DictionaryStatus = document.querySelector("#cet4DictionaryStatus");
+  nodes.cet4DictionaryResults = document.querySelector("#cet4DictionaryResults");
+  nodes.cet4DictionaryPageSize = document.querySelector("#cet4DictionaryPageSize");
+  nodes.cet4DictionaryPrevBtn = document.querySelector("#cet4DictionaryPrevBtn");
+  nodes.cet4DictionaryNextBtn = document.querySelector("#cet4DictionaryNextBtn");
+  nodes.cet4DictionaryPageInfo = document.querySelector("#cet4DictionaryPageInfo");
+  nodes.importCet4DictionaryBtn = document.querySelector("#importCet4DictionaryBtn");
+  nodes.cet4DictionaryImportInput = document.querySelector("#cet4DictionaryImportInput");
+  nodes.favoriteGameWordBtn = document.querySelector("#favoriteGameWordBtn");
+  nodes.gameWordFavoriteStatus = document.querySelector("#gameWordFavoriteStatus");
+  nodes.favoriteRelaxWordBtn = document.querySelector("#favoriteRelaxWordBtn");
+  nodes.relaxWordFavoriteStatus = document.querySelector("#relaxWordFavoriteStatus");
+  nodes.relaxPromptEn = document.querySelector("#relaxPromptEn");
+}
+
+setupDynamicEnglishMemoryUi();
+
+function setupMiniGameWordbookUi() {
+  const gameActions = document.querySelector("#gameModal .game-actions");
+  if (gameActions && !document.querySelector("#slashGameWordBtn")) {
+    gameActions.insertAdjacentHTML(
+      "beforeend",
+      `<button class="ghost-light-btn" id="slashGameWordBtn" type="button">斩击收录</button>`
+    );
+  }
+  const gameFeedback = document.querySelector("#gameFeedback");
+  if (gameFeedback && !document.querySelector("#gameWordbookStatus")) {
+    gameFeedback.insertAdjacentHTML(
+      "beforebegin",
+      `<div class="game-wordbook-status" id="gameWordbookStatus">完全掌握的词可以斩击收录，配对错误和薄弱词会自动进入错误词本。</div>`
+    );
+  }
+  const floatingRail = document.querySelector(".floating-rail");
+  const scrollTopBtn = document.querySelector("#scrollTopBtn");
+  if (floatingRail && scrollTopBtn && !document.querySelector("#utilityWordbookBtn")) {
+    scrollTopBtn.insertAdjacentHTML(
+      "beforebegin",
+      `<button class="rail-btn" id="utilityWordbookBtn" type="button">单词本</button>`
+    );
+  }
+  if (!document.querySelector("#wordbookModal")) {
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `
+        <div class="modal-layer" id="wordbookModal" aria-hidden="true">
+          <section class="modal-card wordbook-modal" role="dialog" aria-modal="true" aria-labelledby="wordbookTitle">
+            <div class="modal-head">
+              <div>
+                <p class="kicker">六级小游戏</p>
+                <h2 id="wordbookTitle">单词本</h2>
+              </div>
+              <button class="icon-btn close-modal" type="button" data-close="wordbookModal">×</button>
+            </div>
+            <div class="wordbook-summary" id="wordbookSummary"></div>
+            <div class="wordbook-grid">
+              <section class="wordbook-section">
+                <div class="section-head">
+                  <div>
+                    <p class="kicker">完全掌握</p>
+                    <h3>斩击词本</h3>
+                  </div>
+                  <span class="count-pill" id="masteredWordCount">0</span>
+                </div>
+                <div class="wordbook-list" id="masteredWordList"></div>
+              </section>
+              <section class="wordbook-section">
+                <div class="section-head">
+                  <div>
+                    <p class="kicker">需要回看</p>
+                    <h3>错误词本</h3>
+                  </div>
+                  <span class="count-pill" id="mistakeWordCount">0</span>
+                </div>
+                <div class="wordbook-list" id="mistakeWordList"></div>
+              </section>
+            </div>
+          </section>
+        </div>
+      `
+    );
+  }
+
+  nodes.slashGameWordBtn = document.querySelector("#slashGameWordBtn");
+  nodes.gameWordbookStatus = document.querySelector("#gameWordbookStatus");
+  nodes.utilityWordbookBtn = document.querySelector("#utilityWordbookBtn");
+  nodes.wordbookModal = document.querySelector("#wordbookModal");
+  nodes.wordbookSummary = document.querySelector("#wordbookSummary");
+  nodes.masteredWordCount = document.querySelector("#masteredWordCount");
+  nodes.mistakeWordCount = document.querySelector("#mistakeWordCount");
+  nodes.masteredWordList = document.querySelector("#masteredWordList");
+  nodes.mistakeWordList = document.querySelector("#mistakeWordList");
+}
+
+setupMiniGameWordbookUi();
+
 const NOTE_KEY = "smart-study-note-v1";
 function getBackupKeys() {
-  return [STORAGE_KEY, DONE_KEY, FOCUS_KEY, REVIEW_KEY, THEME_KEY, NOTE_KEY, ENGLISH_FAVORITES_KEY, MISTAKE_KEY, DICTIONARY_KEY, CET4_DICTIONARY_KEY];
+  return [STORAGE_KEY, DONE_KEY, FOCUS_KEY, REVIEW_KEY, THEME_KEY, NOTE_KEY, ENGLISH_FAVORITES_KEY, MISTAKE_KEY, DICTIONARY_KEY, CET4_DICTIONARY_KEY, MEMORY_KEY, GAME_WORDBOOK_KEY];
 }
 
 const dailyEnglishStories = [
@@ -719,6 +969,8 @@ let englishFavoriteState = loadObject(ENGLISH_FAVORITES_KEY);
 let mistakeState = normalizeMistakeState(loadObject(MISTAKE_KEY));
 let dictionaryState = normalizeDictionaryState(loadObject(DICTIONARY_KEY));
 let cet4DictionaryState = normalizeDictionaryState(loadObject(CET4_DICTIONARY_KEY));
+let memoryState = normalizeMemoryState(loadObject(MEMORY_KEY));
+let gameWordbookState = normalizeGameWordbookState(loadObject(GAME_WORDBOOK_KEY));
 let currentDailyEnglishStory = null;
 let currentDailyEnglishIndex = 0;
 let currentMistakeStar = 3;
@@ -726,6 +978,7 @@ let currentMistakeImage = "";
 let pomodoroTimer = null;
 let pomodoroRemaining = 25 * 60;
 let pomodoroStartedSeconds = 25 * 60;
+let memoryStatusMessage = "收藏不会的单词后，这里会按艾宾浩斯节奏给你排好复习。";
 
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -808,6 +1061,14 @@ function saveCet4DictionaryState() {
   localStorage.setItem(CET4_DICTIONARY_KEY, JSON.stringify(cet4DictionaryState));
 }
 
+function saveMemoryState() {
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(memoryState));
+}
+
+function saveGameWordbookState() {
+  localStorage.setItem(GAME_WORDBOOK_KEY, JSON.stringify(gameWordbookState));
+}
+
 function normalizeMistakeState(raw) {
   if (Array.isArray(raw)) return raw;
   if (Array.isArray(raw?.items)) return raw.items;
@@ -865,6 +1126,325 @@ function normalizeDictionaryState(raw) {
     (raw?.phrases || []).forEach((entry) => pushEntry(entry, "phrase"));
   }
   return { words, phrases };
+}
+
+function normalizeDateValue(value) {
+  if (!value) return isoDate(new Date());
+  const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? isoDate(new Date()) : isoDate(parsed);
+}
+
+function normalizeMemoryState(raw) {
+  const items = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : [];
+  const seen = new Set();
+  return {
+    items: items
+      .map((item) => {
+        const word = String(item?.word || "").trim();
+        if (!word) return null;
+        const lookupKey = word.toLowerCase();
+        if (seen.has(lookupKey)) return null;
+        seen.add(lookupKey);
+        const stage = Math.max(0, Math.min(MEMORY_INTERVALS.length - 1, Number(item?.stage) || 0));
+        const addedDate = normalizeDateValue(item?.addedDate);
+        const reviewHistory = Array.isArray(item?.reviewHistory)
+          ? item.reviewHistory.map((entry) => normalizeDateValue(entry))
+          : [];
+        const lastReviewed = item?.lastReviewed ? normalizeDateValue(item.lastReviewed) : "";
+        const anchorDate = lastReviewed || addedDate;
+        return {
+          id: item?.id || `memory-${lookupKey.replace(/[^a-z0-9]+/g, "-")}`,
+          word,
+          translation: String(item?.translation || "").trim(),
+          phonetic: String(item?.phonetic || "").trim(),
+          example: String(item?.example || "").trim(),
+          source: String(item?.source || "词汇收藏").trim(),
+          stage,
+          addedDate,
+          lastReviewed,
+          nextReview: item?.nextReview
+            ? normalizeDateValue(item.nextReview)
+            : isoDate(addDays(new Date(`${anchorDate}T00:00:00`), MEMORY_INTERVALS[stage] || 0)),
+          reviewHistory
+        };
+      })
+      .filter(Boolean)
+  };
+}
+
+function normalizeGameWordbookEntry(item, bucket) {
+  const fallback = typeof item === "string" ? { word: item } : item || {};
+  const dictionaryEntry = getDictionaryEntryByWord(fallback.word || fallback.term || "") || {};
+  const word = String(fallback.word || dictionaryEntry.word || "").trim();
+  if (!word) return null;
+  const lookupKey = word.toLowerCase();
+  const todayKey = normalizeDateValue(fallback.addedDate || isoDate(new Date()));
+  const updatedAt = fallback.updatedAt ? String(fallback.updatedAt) : new Date().toISOString();
+  const source = String(fallback.source || dictionaryEntry.source || "六级小游戏").trim();
+  const baseEntry = {
+    id: fallback.id || `game-word-${lookupKey.replace(/[^a-z0-9]+/g, "-")}`,
+    word,
+    translation: String(fallback.translation || dictionaryEntry.translation || "").trim(),
+    phonetic: String(fallback.phonetic || dictionaryEntry.phonetic || "").trim(),
+    example: String(fallback.example || dictionaryEntry.example || "").trim(),
+    source,
+    addedDate: todayKey,
+    updatedAt
+  };
+  if (bucket === "mastered") {
+    return {
+      ...baseEntry,
+      slashCount: Math.max(1, Number(fallback.slashCount) || 1)
+    };
+  }
+  const reasons = Array.isArray(fallback.reasons)
+    ? fallback.reasons.map((reason) => String(reason).trim()).filter(Boolean)
+    : String(fallback.reason || "")
+        .split(/[，,]/)
+        .map((reason) => reason.trim())
+        .filter(Boolean);
+  return {
+    ...baseEntry,
+    wrongCount: Math.max(1, Number(fallback.wrongCount) || 1),
+    reasons: [...new Set(reasons)]
+  };
+}
+
+function normalizeGameWordbookState(raw) {
+  const masteredItems = Array.isArray(raw?.mastered) ? raw.mastered : Array.isArray(raw?.masteredWords) ? raw.masteredWords : [];
+  const mistakeItems = Array.isArray(raw?.mistakes) ? raw.mistakes : Array.isArray(raw?.mistakeWords) ? raw.mistakeWords : [];
+  const mapBucket = (items, bucket) => {
+    const seen = new Set();
+    return items
+      .map((item) => normalizeGameWordbookEntry(item, bucket))
+      .filter((item) => {
+        if (!item) return false;
+        const lookupKey = item.word.toLowerCase();
+        if (seen.has(lookupKey)) return false;
+        seen.add(lookupKey);
+        return true;
+      });
+  };
+  return {
+    mastered: mapBucket(masteredItems, "mastered"),
+    mistakes: mapBucket(mistakeItems, "mistakes")
+  };
+}
+
+function findGameWordbookEntry(bucket, word) {
+  const lookup = String(word || "").trim().toLowerCase();
+  if (!lookup) return null;
+  return (gameWordbookState[bucket] || []).find((item) => item.word.toLowerCase() === lookup) || null;
+}
+
+function removeGameWordbookEntry(bucket, word) {
+  const lookup = String(word || "").trim().toLowerCase();
+  if (!lookup) return;
+  gameWordbookState[bucket] = (gameWordbookState[bucket] || []).filter((item) => item.word.toLowerCase() !== lookup);
+}
+
+function buildGameWordbookSource(wordData) {
+  return typeof wordData === "object" && wordData?.source ? String(wordData.source) : "六级小游戏";
+}
+
+function upsertGameWordbookEntry(bucket, wordData, options = {}) {
+  const entry = normalizeGameWordbookEntry(
+    {
+      ...(typeof wordData === "object" ? wordData : { word: wordData }),
+      source: options.source || buildGameWordbookSource(wordData),
+      reason: options.reason,
+      reasons: options.reasons
+    },
+    bucket
+  );
+  if (!entry) return null;
+  const lookupKey = entry.word.toLowerCase();
+  const existing = findGameWordbookEntry(bucket, entry.word);
+  if (bucket === "mastered") {
+    removeGameWordbookEntry("mistakes", entry.word);
+    const merged = existing
+      ? {
+          ...existing,
+          ...entry,
+          addedDate: existing.addedDate || entry.addedDate,
+          slashCount: Math.max(1, Number(existing.slashCount) || 1) + (options.bump === false ? 0 : 1)
+        }
+      : {
+          ...entry,
+          slashCount: 1
+        };
+    gameWordbookState.mastered = [
+      merged,
+      ...(gameWordbookState.mastered || []).filter((item) => item.word.toLowerCase() !== lookupKey)
+    ];
+    return merged;
+  }
+  removeGameWordbookEntry("mastered", entry.word);
+  const reasonList = [...new Set([...(existing?.reasons || []), ...(entry.reasons || []), ...(options.reason ? [options.reason] : [])].filter(Boolean))];
+  const merged = existing
+    ? {
+        ...existing,
+        ...entry,
+        addedDate: existing.addedDate || entry.addedDate,
+        wrongCount: Math.max(1, Number(existing.wrongCount) || 1) + (options.bump === false ? 0 : 1),
+        reasons: reasonList
+      }
+    : {
+        ...entry,
+        wrongCount: 1,
+        reasons: reasonList
+      };
+  gameWordbookState.mistakes = [
+    merged,
+    ...(gameWordbookState.mistakes || []).filter((item) => item.word.toLowerCase() !== lookupKey)
+  ];
+  return merged;
+}
+
+function createWordbookCard(entry, bucket) {
+  const card = document.createElement("article");
+  card.className = "wordbook-card";
+
+  const head = document.createElement("div");
+  head.className = "wordbook-card-head";
+
+  const titleWrap = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = entry.word;
+  titleWrap.append(title);
+  if (entry.phonetic) {
+    const phonetic = document.createElement("span");
+    phonetic.className = "wordbook-phonetic";
+    phonetic.textContent = entry.phonetic;
+    titleWrap.append(phonetic);
+  }
+
+  const count = document.createElement("span");
+  count.className = "count-pill";
+  count.textContent = bucket === "mastered" ? `斩击 ${entry.slashCount || 1}` : `错误 ${entry.wrongCount || 1}`;
+
+  head.append(titleWrap, count);
+
+  const translation = document.createElement("p");
+  translation.className = "wordbook-translation";
+  translation.textContent = entry.translation || "暂未补充释义";
+
+  card.append(head, translation);
+
+  if (entry.example) {
+    const example = document.createElement("p");
+    example.className = "wordbook-example";
+    example.textContent = entry.example;
+    card.append(example);
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "wordbook-meta";
+  const metaBits = [
+    `加入 ${entry.addedDate}`,
+    bucket === "mastered"
+      ? `来源 ${entry.source || "六级小游戏"}`
+      : `标签 ${(entry.reasons || []).join(" / ") || "错误记录"}`
+  ];
+  meta.textContent = metaBits.join("  ·  ");
+  card.append(meta);
+  return card;
+}
+
+function renderMiniGameWordbooks() {
+  if (!nodes.wordbookSummary || !nodes.masteredWordList || !nodes.mistakeWordList) return;
+  const mastered = [...(gameWordbookState.mastered || [])].sort(
+    (left, right) => String(right.updatedAt || right.addedDate).localeCompare(String(left.updatedAt || left.addedDate))
+  );
+  const mistakes = [...(gameWordbookState.mistakes || [])].sort(
+    (left, right) => String(right.updatedAt || right.addedDate).localeCompare(String(left.updatedAt || left.addedDate))
+  );
+
+  nodes.wordbookSummary.textContent = mastered.length || mistakes.length
+    ? `小游戏里掌握透的词会进斩击词本，配错或答弱的词会自动进错误词本。当前共收录 ${mastered.length + mistakes.length} 个词。`
+    : "小游戏里遇到的重点词会在这里自动分类，方便你后面专门复盘。";
+  nodes.masteredWordCount.textContent = String(mastered.length);
+  nodes.mistakeWordCount.textContent = String(mistakes.length);
+
+  nodes.masteredWordList.innerHTML = "";
+  nodes.mistakeWordList.innerHTML = "";
+
+  if (!mastered.length) {
+    nodes.masteredWordList.innerHTML = `<div class="empty-book-list">完全掌握的词可以直接斩击收录，后面复习时会更清爽。</div>`;
+  } else {
+    mastered.forEach((entry) => nodes.masteredWordList.append(createWordbookCard(entry, "mastered")));
+  }
+
+  if (!mistakes.length) {
+    nodes.mistakeWordList.innerHTML = `<div class="empty-book-list">还没有记录到错误词，配错或续写偏弱时会自动出现在这里。</div>`;
+  } else {
+    mistakes.forEach((entry) => nodes.mistakeWordList.append(createWordbookCard(entry, "mistakes")));
+  }
+
+  renderSlashGameWordState();
+}
+
+function renderSlashGameWordState() {
+  if (!nodes.slashGameWordBtn || !nodes.gameWordbookStatus) return;
+  if (!currentGameWord?.word) {
+    nodes.slashGameWordBtn.disabled = true;
+    nodes.slashGameWordBtn.classList.remove("active");
+    nodes.slashGameWordBtn.textContent = "斩击收录";
+    nodes.gameWordbookStatus.textContent = "完全掌握的词可以斩击收录，配对错误和薄弱词会自动进入错误词本。";
+    return;
+  }
+  const mastered = findGameWordbookEntry("mastered", currentGameWord.word);
+  const mistake = findGameWordbookEntry("mistakes", currentGameWord.word);
+  nodes.slashGameWordBtn.disabled = false;
+  nodes.slashGameWordBtn.classList.toggle("active", Boolean(mastered));
+  nodes.slashGameWordBtn.textContent = mastered ? "已斩击收录" : "斩击收录";
+  if (mastered) {
+    nodes.gameWordbookStatus.textContent = `当前词 ${mastered.word} 已在斩击词本中，累计斩击 ${mastered.slashCount || 1} 次。`;
+    return;
+  }
+  if (mistake) {
+    nodes.gameWordbookStatus.textContent = `当前词 ${mistake.word} 已记录到错误词本，错误 ${mistake.wrongCount || 1} 次。`;
+    return;
+  }
+  nodes.gameWordbookStatus.textContent = `当前词 ${currentGameWord.word}：完全掌握可斩击收录，配错或续写偏弱会自动记到错误词本。`;
+}
+
+function collectMasteredGameWord(wordData, statusNode) {
+  const saved = upsertGameWordbookEntry("mastered", wordData, { source: "六级小游戏", bump: !findGameWordbookEntry("mastered", wordData?.word || wordData) });
+  if (!saved) {
+    if (statusNode) statusNode.textContent = "当前没有可收录的单词。";
+    return;
+  }
+  saveGameWordbookState();
+  renderMiniGameWordbooks();
+  renderDashboard();
+  if (statusNode) {
+    statusNode.textContent = `已将 ${saved.word} 收入斩击词本，后面可以只挑难词复习。`;
+  }
+}
+
+function collectMistakeGameWord(wordData, reason, statusNode) {
+  const saved = upsertGameWordbookEntry("mistakes", wordData, { source: "六级小游戏", reason });
+  if (!saved) return;
+  saveGameWordbookState();
+  renderMiniGameWordbooks();
+  renderDashboard();
+  if (statusNode) {
+    statusNode.textContent = `${saved.word} 已记录到错误词本，后面会更方便专项复盘。`;
+  }
+}
+
+function collectMismatchPairWords(englishWord, chinesePairWord) {
+  const words = [englishWord, chinesePairWord]
+    .map((item) => getDictionaryEntryByWord(item) || (item ? { word: item } : null))
+    .filter(Boolean);
+  const seen = new Set();
+  words.forEach((entry) => {
+    const lookup = entry.word.toLowerCase();
+    if (seen.has(lookup)) return;
+    seen.add(lookup);
+    collectMistakeGameWord(entry, "配对错误");
+  });
 }
 
 function renderDailyEnglish() {
@@ -983,6 +1563,184 @@ function getGameWordPool() {
       keywords: item.keywords?.length ? item.keywords : item.translation.split(/[，,、\s]+/).filter(Boolean),
       example: item.example || `A good learner can use ${item.word} in a clear sentence.`
     }));
+}
+
+function getDictionaryEntryByWord(word) {
+  const lookup = String(word || "").trim().toLowerCase();
+  if (!lookup) return null;
+  const matchEntry = (entries) => entries.find((entry) => String(entry.word || "").trim().toLowerCase() === lookup);
+  return matchEntry(getDictionaryEntries()) || matchEntry(getCet4DictionaryEntries()) || null;
+}
+
+function buildMemoryEntry(wordData, source) {
+  const entry = typeof wordData === "string" ? getDictionaryEntryByWord(wordData) : wordData;
+  if (!entry?.word) return null;
+  const todayKey = isoDate(new Date());
+  return {
+    id: `memory-${entry.word.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    word: entry.word,
+    translation: entry.translation || "",
+    phonetic: entry.phonetic || "",
+    example: entry.example || "",
+    source: source || "词汇收藏",
+    stage: 0,
+    addedDate: todayKey,
+    lastReviewed: "",
+    nextReview: todayKey,
+    reviewHistory: []
+  };
+}
+
+function findMemoryItemByWord(word) {
+  const lookup = String(word || "").trim().toLowerCase();
+  return memoryState.items.find((item) => item.word.toLowerCase() === lookup) || null;
+}
+
+function getMemoryItems(selectedDate = isoDate(new Date())) {
+  return [...memoryState.items].sort((left, right) => {
+    const leftDue = left.nextReview <= selectedDate ? 0 : 1;
+    const rightDue = right.nextReview <= selectedDate ? 0 : 1;
+    if (leftDue !== rightDue) return leftDue - rightDue;
+    return String(left.nextReview).localeCompare(String(right.nextReview)) || String(left.word).localeCompare(String(right.word));
+  });
+}
+
+function setWordFavoriteStatus(node, item, emptyText) {
+  if (!node) return;
+  if (!item) {
+    node.textContent = emptyText;
+    return;
+  }
+  const saved = findMemoryItemByWord(item.word);
+  node.textContent = saved
+    ? `已收藏 ${saved.word} · 下次复习 ${saved.nextReview}`
+    : `当前词：${item.word} · 遇到不会时可以直接加入复习库。`;
+}
+
+function renderGameWordFavoriteState() {
+  if (!nodes.favoriteGameWordBtn) return;
+  const saved = currentGameWord ? findMemoryItemByWord(currentGameWord.word) : null;
+  nodes.favoriteGameWordBtn.textContent = saved ? "已收藏到记忆库" : "收藏当前词";
+  nodes.favoriteGameWordBtn.classList.toggle("active", Boolean(saved));
+  setWordFavoriteStatus(nodes.gameWordFavoriteStatus, currentGameWord, "遇到不熟的单词，可以直接收藏到复习库。");
+}
+
+function renderRelaxWordFavoriteState() {
+  if (!nodes.favoriteRelaxWordBtn) return;
+  const currentWord = relaxGameState.currentWord;
+  const saved = currentWord ? findMemoryItemByWord(currentWord.word) : null;
+  nodes.favoriteRelaxWordBtn.textContent = saved ? "已收藏到记忆库" : "收藏当前词";
+  nodes.favoriteRelaxWordBtn.classList.toggle("active", Boolean(saved));
+  setWordFavoriteStatus(nodes.relaxWordFavoriteStatus, currentWord, "这关不会的单词，可以直接放进艾宾浩斯复习模块。");
+}
+
+function collectMemoryWord(wordData, source, statusNode) {
+  const entry = typeof wordData === "string" ? getDictionaryEntryByWord(wordData) : wordData;
+  if (!entry?.word) {
+    if (statusNode) statusNode.textContent = "当前题目还没有可收藏的单词。";
+    return;
+  }
+  const saved = findMemoryItemByWord(entry.word);
+  if (saved) {
+    saved.translation ||= entry.translation || "";
+    saved.phonetic ||= entry.phonetic || "";
+    saved.example ||= entry.example || "";
+    saved.source ||= source || "词汇收藏";
+    memoryStatusMessage = `${saved.word} 已经在记忆库里，下次复习时间是 ${saved.nextReview}。`;
+    if (statusNode) statusNode.textContent = memoryStatusMessage;
+    saveMemoryState();
+    renderMemoryPanel();
+    renderGameWordFavoriteState();
+    renderRelaxWordFavoriteState();
+    return;
+  }
+  const memoryEntry = buildMemoryEntry(entry, source);
+  if (!memoryEntry) return;
+  memoryState.items.unshift(memoryEntry);
+  memoryStatusMessage = `已收藏 ${memoryEntry.word}，今天就可以开始第 1 次复习。`;
+  if (statusNode) statusNode.textContent = memoryStatusMessage;
+  saveMemoryState();
+  renderMemoryPanel();
+  renderGameWordFavoriteState();
+  renderRelaxWordFavoriteState();
+}
+
+function reviewMemoryItem(itemId, dateKey) {
+  const memoryEntry = memoryState.items.find((item) => item.id === itemId);
+  if (!memoryEntry) return;
+  const reviewedOn = normalizeDateValue(dateKey || nodes.memoryDateInput?.value || isoDate(new Date()));
+  if (memoryEntry.lastReviewed === reviewedOn) {
+    memoryStatusMessage = `${memoryEntry.word} 在 ${reviewedOn} 已经勾选过了。`;
+    renderMemoryPanel();
+    return;
+  }
+  const nextStage = Math.min(memoryEntry.stage + 1, MEMORY_INTERVALS.length - 1);
+  memoryEntry.stage = nextStage;
+  memoryEntry.lastReviewed = reviewedOn;
+  memoryEntry.reviewHistory = [...new Set([...(memoryEntry.reviewHistory || []), reviewedOn])].sort();
+  memoryEntry.nextReview = isoDate(addDays(new Date(`${reviewedOn}T00:00:00`), MEMORY_INTERVALS[nextStage] || 0));
+  memoryStatusMessage = `${memoryEntry.word} 已完成本次复习，下一次安排在 ${memoryEntry.nextReview}。`;
+  saveMemoryState();
+  renderMemoryPanel();
+  renderGameWordFavoriteState();
+  renderRelaxWordFavoriteState();
+}
+
+function renderMemoryPanel() {
+  if (!nodes.memoryList || !nodes.memoryStats || !nodes.memoryStatus) return;
+  const selectedDate = normalizeDateValue(nodes.memoryDateInput?.value || isoDate(new Date()));
+  if (nodes.memoryDateInput && nodes.memoryDateInput.value !== selectedDate) {
+    nodes.memoryDateInput.value = selectedDate;
+  }
+  const items = getMemoryItems(selectedDate);
+  const dueCount = items.filter((item) => item.nextReview <= selectedDate).length;
+  const reviewedCount = items.filter((item) => item.lastReviewed === selectedDate).length;
+  const stageHighCount = items.filter((item) => item.stage >= 4).length;
+  nodes.memoryStats.innerHTML = `
+    <span>已收藏 ${items.length}</span>
+    <span>${selectedDate} 待复习 ${dueCount}</span>
+    <span>${selectedDate} 已勾选 ${reviewedCount}</span>
+    <span>稳定记忆 ${stageHighCount}</span>
+  `;
+  if (!items.length) {
+    nodes.memoryStatus.textContent = "记忆库还是空的。可以在六级小游戏和轻松一下里，把不会的词先收藏进来。";
+    nodes.memoryList.innerHTML = `<div class="empty-book-list">暂时还没有单词。收藏后，这里会按艾宾浩斯节奏自动排列复习顺序。</div>`;
+    return;
+  }
+  nodes.memoryStatus.textContent =
+    memoryStatusMessage ||
+    (dueCount
+      ? `${selectedDate} 有 ${dueCount} 个单词到期，勾选后会自动推到下一次复习。`
+      : `${selectedDate} 暂时没有到期词，也可以提前复习下面的收藏。`);
+  nodes.memoryList.innerHTML = "";
+  items.forEach((item) => {
+    const isReviewed = item.lastReviewed === selectedDate;
+    const isDue = item.nextReview <= selectedDate;
+    const card = document.createElement("article");
+    card.className = `memory-card${isDue ? " due" : ""}`;
+    card.innerHTML = `
+      <div class="memory-card-head">
+        <div>
+          <strong>${item.word}</strong>
+          ${item.phonetic ? `<p class="dictionary-phonetic">${item.phonetic}</p>` : ""}
+        </div>
+        <span>${isDue ? "待复习" : "可提前复习"}</span>
+      </div>
+      <p>${item.translation || "暂无释义"}</p>
+      ${item.example ? `<em>${item.example}</em>` : ""}
+      <div class="memory-meta">
+        <span>来源：${item.source}</span>
+        <span>阶段：第 ${item.stage + 1} 轮</span>
+        <span>加入：${item.addedDate}</span>
+        <span>下次：${item.nextReview}</span>
+      </div>
+      <label class="memory-check${isReviewed ? " done" : ""}">
+        <input type="checkbox" data-memory-review="${item.id}" ${isReviewed ? "checked" : ""} />
+        <span>${isReviewed ? "当日已复习" : "勾选完成本次复习"}</span>
+      </label>
+    `;
+    nodes.memoryList.append(card);
+  });
 }
 
 function renderDictionaryPanel(panelNodes, panelState, allEntries, counts) {
@@ -1937,6 +2695,9 @@ function refreshStateAfterImport() {
   mistakeState = normalizeMistakeState(loadObject(MISTAKE_KEY));
   dictionaryState = normalizeDictionaryState(loadObject(DICTIONARY_KEY));
   cet4DictionaryState = normalizeDictionaryState(loadObject(CET4_DICTIONARY_KEY));
+  memoryState = normalizeMemoryState(loadObject(MEMORY_KEY));
+  gameWordbookState = normalizeGameWordbookState(loadObject(GAME_WORDBOOK_KEY));
+  memoryStatusMessage = "已恢复记忆库数据，可以继续复习。";
   applyEntryTheme(localStorage.getItem(THEME_KEY) || entryThemes[0][0]);
   renderDailyEnglish();
   render();
@@ -2301,6 +3062,8 @@ function render() {
   renderMistakes();
   renderDictionary();
   renderCet4Dictionary();
+  renderMemoryPanel();
+  renderMiniGameWordbooks();
   renderDashboard();
 }
 
@@ -2493,6 +3256,8 @@ function setupGame() {
   nodes.gameScore.textContent = "得分：0";
   nodes.gameMessage.textContent = "随机抽取 6 个六级词汇：先配对，再翻译续写。";
   nextGameQuestion();
+  renderGameWordFavoriteState();
+  renderSlashGameWordState();
 }
 
 function createMatchCard(text, pair, side) {
@@ -2533,6 +3298,7 @@ function checkMatch() {
     selectedChinese = null;
     return;
   }
+  collectMismatchPairWords(selectedEnglish.dataset.pair, selectedChinese.dataset.pair);
   nodes.gameMessage.textContent = "这组不匹配，再看一下中文核心含义。";
   setTimeout(() => {
     selectedEnglish?.classList.remove("selected");
@@ -2550,6 +3316,8 @@ function nextGameQuestion() {
   nodes.gameWritingInput.value = "";
   nodes.gameFeedback.textContent = "";
   nodes.gameMessage.textContent = `第 ${gameRound + 1} 题：写翻译，再用它续写一句英文。`;
+  renderGameWordFavoriteState();
+  renderSlashGameWordState();
 }
 
 function scoreTranslation(answer, word) {
@@ -2581,6 +3349,11 @@ function submitGameAnswer() {
     <p>参考翻译：${currentGameWord.translation}</p>
     <p>翻译 ${translationScore}/60，续写 ${writingScore}/40。续写里用到 <strong>${currentGameWord.word}</strong> 且句子完整，分数会更高。</p>
   `;
+  if (roundScore < 55) {
+    collectMistakeGameWord(currentGameWord, "翻译续写薄弱", nodes.gameWordbookStatus);
+  } else {
+    renderSlashGameWordState();
+  }
   nodes.gameMessage.textContent =
     roundScore >= 80 ? "很稳，翻译和输出都不错。" : roundScore >= 55 ? "方向对了，再把核心含义写完整一点。" : "先抓关键词，再尝试写一个完整英文句子。";
 }
@@ -2639,6 +3412,7 @@ function createRelaxGameState() {
     wordCursor: 0,
     queue: [],
     currentWord: null,
+    currentChallenge: null,
     currentEnemy: null,
     isBoss: false,
     locked: true,
@@ -2651,7 +3425,7 @@ function createRelaxGameState() {
     screenShake: 0,
     enemyFlash: 0,
     heroFlash: 0,
-    feedback: "选好角色后，按中文提示写出英语单词，答对就能击退敌人。"
+    feedback: "选好角色后，判断英文和中文是否匹配，答对就能击退敌人。"
   };
 }
 
@@ -2700,6 +3474,48 @@ function currentRelaxWord() {
   return word || { word: "challenge", translation: "挑战", keywords: ["挑战"], example: "" };
 }
 
+function buildRelaxChallenge(word) {
+  const baseWord = word || currentRelaxWord();
+  ensureRelaxQueue();
+  const queue = relaxGameState.queue;
+  if (!queue.length || !baseWord?.translation) {
+    return {
+      word: baseWord?.word || "challenge",
+      translation: baseWord?.translation || "挑战",
+      isMatch: true
+    };
+  }
+  const shouldMatch = queue.length < 2 || Math.random() < 0.5;
+  if (shouldMatch) {
+    return {
+      word: baseWord.word,
+      translation: baseWord.translation,
+      isMatch: true
+    };
+  }
+  let mismatchTranslation = "";
+  for (let offset = 1; offset < queue.length; offset += 1) {
+    const candidate = queue[(relaxGameState.wordCursor + offset) % queue.length];
+    if (!candidate?.translation) continue;
+    if (String(candidate.word || "").toLowerCase() === String(baseWord.word || "").toLowerCase()) continue;
+    if (candidate.translation === baseWord.translation) continue;
+    mismatchTranslation = candidate.translation;
+    break;
+  }
+  if (!mismatchTranslation) {
+    return {
+      word: baseWord.word,
+      translation: baseWord.translation,
+      isMatch: true
+    };
+  }
+  return {
+    word: baseWord.word,
+    translation: mismatchTranslation,
+    isMatch: false
+  };
+}
+
 function triggerRelaxVisualFx(type, duration = 12, side = "enemy", shake = 0) {
   relaxGameState.fxType = type;
   relaxGameState.fxFrame = duration;
@@ -2726,11 +3542,12 @@ function spawnRelaxStage() {
   relaxGameState.enemyMaxHp = relaxGameState.isBoss ? 3 : 1;
   relaxGameState.enemyHp = relaxGameState.enemyMaxHp;
   relaxGameState.currentWord = currentRelaxWord();
+  relaxGameState.currentChallenge = buildRelaxChallenge(relaxGameState.currentWord);
   relaxGameState.locked = false;
   relaxGameState.bossIntro = relaxGameState.isBoss ? 34 : 0;
   relaxGameState.feedback = relaxGameState.isBoss
-    ? `Boss 登场：${relaxGameState.currentEnemy.name}。连续答对 3 次才能击退它。`
-    : `第 ${relaxGameState.stage} 关开始，答对当前中文提示就能击退 ${relaxGameState.currentEnemy.name}。`;
+    ? `Boss 登场：${relaxGameState.currentEnemy.name}。连续判断对 3 次才能击退它。`
+    : `第 ${relaxGameState.stage} 关开始，判断当前英文和中文是否匹配。`;
   triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-intro" : "spawn", relaxGameState.isBoss ? 22 : 10, "enemy", relaxGameState.isBoss ? 4 : 2);
   if (nodes.relaxAnswerInput) nodes.relaxAnswerInput.value = "";
   renderRelaxGame();
@@ -2747,17 +3564,11 @@ function startRelaxGame(gender) {
   relaxGameState.queue = buildRelaxGameQueue();
   spawnRelaxStage();
   startRelaxMusic();
-  nodes.relaxAnswerInput?.focus();
-}
-
-function normalizeRelaxAnswer(text) {
-  return String(text || "")
-    .toLowerCase()
-    .replace(/[^a-z-]/g, "");
 }
 
 function updateRelaxPromptForNextHit() {
   relaxGameState.currentWord = currentRelaxWord();
+  relaxGameState.currentChallenge = buildRelaxChallenge(relaxGameState.currentWord);
   if (nodes.relaxAnswerInput) nodes.relaxAnswerInput.value = "";
 }
 
@@ -2769,17 +3580,11 @@ function finishRelaxRun(message) {
   renderRelaxGame();
 }
 
-function submitRelaxGameAnswer() {
+function submitRelaxGameAnswer(choseMatch = true) {
   if (relaxGameState.locked || !relaxGameState.heroGender || !relaxGameState.currentWord) return;
-  const answer = nodes.relaxAnswerInput.value.trim();
-  if (!answer) {
-    relaxGameState.feedback = "先写出英文答案，再出招。";
-    renderRelaxGame();
-    return;
-  }
-  const target = normalizeRelaxAnswer(relaxGameState.currentWord.word);
-  const given = normalizeRelaxAnswer(answer);
-  if (given === target) {
+  const challenge = relaxGameState.currentChallenge || buildRelaxChallenge(relaxGameState.currentWord);
+  const isCorrect = Boolean(choseMatch) === Boolean(challenge.isMatch);
+  if (isCorrect) {
     relaxGameState.score += relaxGameState.isBoss ? 26 : 12;
     relaxGameState.enemyHp = Math.max(0, relaxGameState.enemyHp - 1);
     relaxGameState.wordCursor += 1;
@@ -2805,37 +3610,21 @@ function submitRelaxGameAnswer() {
     triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-slash" : "slash", relaxGameState.isBoss ? 14 : 10, "enemy", relaxGameState.isBoss ? 4 : 2);
     playRelaxSfx(relaxGameState.isBoss ? "boss-hit" : "hit");
     updateRelaxPromptForNextHit();
-    relaxGameState.feedback = `命中了 ${relaxGameState.currentEnemy?.name || "敌人"}，继续答下一题。还剩 ${relaxGameState.enemyHp} 点敌方生命。`;
+    relaxGameState.feedback = `判断正确，命中了 ${relaxGameState.currentEnemy?.name || "敌人"}。还剩 ${relaxGameState.enemyHp} 点敌方生命。`;
     renderRelaxGame();
-    nodes.relaxAnswerInput?.focus();
     return;
   }
   triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-strike" : "hero-hit", relaxGameState.isBoss ? 18 : 12, "hero", relaxGameState.isBoss ? 6 : 4);
   playRelaxSfx(relaxGameState.isBoss ? "boss-strike" : "hurt");
   relaxGameState.heroHp = Math.max(0, relaxGameState.heroHp - (relaxGameState.isBoss ? 16 : 10));
-  relaxGameState.feedback = `失手了。正确答案是 ${relaxGameState.currentWord.word}，再来一题稳住节奏。`;
+  const answerNote = challenge.isMatch
+    ? `这组是匹配的：${relaxGameState.currentWord.word} = ${relaxGameState.currentWord.translation}。`
+    : `这组不匹配：${relaxGameState.currentWord.word} 对应的不是“${challenge.translation}”，更接近“${relaxGameState.currentWord.translation}”。`;
+  relaxGameState.feedback = `判断错了。${answerNote}`;
   relaxGameState.wordCursor += 1;
   if (relaxGameState.heroHp === 0) {
     playRelaxSfx("hero-fall");
     finishRelaxRun(`这次倒在了第 ${relaxGameState.stage} 关，最终得分 ${relaxGameState.score}。重新选择角色就能再来一轮。`);
-    return;
-  }
-  updateRelaxPromptForNextHit();
-  renderRelaxGame();
-  nodes.relaxAnswerInput?.focus();
-}
-
-function skipRelaxQuestion() {
-  if (relaxGameState.locked || !relaxGameState.heroGender || !relaxGameState.currentWord) return;
-  triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-strike" : "hero-hit", relaxGameState.isBoss ? 16 : 10, "hero", relaxGameState.isBoss ? 5 : 3);
-  playRelaxSfx(relaxGameState.isBoss ? "boss-strike" : "skip");
-  relaxGameState.heroHp = Math.max(0, relaxGameState.heroHp - (relaxGameState.isBoss ? 12 : 6));
-  relaxGameState.score = Math.max(0, relaxGameState.score - 4);
-  relaxGameState.feedback = `已跳过。参考答案是 ${relaxGameState.currentWord.word}，敌人趁机反击了一下。`;
-  relaxGameState.wordCursor += 1;
-  if (relaxGameState.heroHp === 0) {
-    playRelaxSfx("hero-fall");
-    finishRelaxRun(`体力耗尽，最终停在第 ${relaxGameState.stage} 关，得分 ${relaxGameState.score}。`);
     return;
   }
   updateRelaxPromptForNextHit();
@@ -2855,7 +3644,8 @@ function renderRelaxGame() {
   nodes.relaxEnemyHpText.textContent = `${relaxGameState.enemyHp} / ${relaxGameState.enemyMaxHp}`;
   nodes.relaxHeroHpBar.style.width = `${heroPercent}%`;
   nodes.relaxEnemyHpBar.style.width = `${enemyPercent}%`;
-  nodes.relaxPromptCn.textContent = relaxGameState.currentWord ? relaxGameState.currentWord.translation : "点击左侧角色开始闯关";
+  nodes.relaxPromptEn.textContent = relaxGameState.currentChallenge?.word || "challenge";
+  nodes.relaxPromptCn.textContent = relaxGameState.currentChallenge ? relaxGameState.currentChallenge.translation : "点击左侧角色开始闯关";
   nodes.relaxBossBadge.textContent = relaxGameState.isBoss ? "Boss 关" : "普通关";
   nodes.relaxStageCounter.textContent = relaxGameState.active
     ? `${relaxGameState.heroName} 正在第 ${relaxGameState.stage} 关作战${relaxGameState.isBoss ? " · Boss 来袭" : ""}`
@@ -2865,11 +3655,14 @@ function renderRelaxGame() {
     ? `每 10 关会出现一次 Boss。当前总分 ${relaxGameState.score}，已击退 ${relaxGameState.defeated} 个敌人。`
     : "每次进入都会重新选择角色，然后从第 1 关开始。";
   nodes.relaxMuteBtn.textContent = relaxGameState.muted ? "取消静音" : "静音";
+  nodes.relaxSubmitBtn.textContent = "是匹配";
+  nodes.relaxSkipBtn.textContent = "不匹配";
   nodes.relaxStartMaleBtn.classList.toggle("active", relaxGameState.heroGender === "male");
   nodes.relaxStartFemaleBtn.classList.toggle("active", relaxGameState.heroGender === "female");
-  nodes.relaxAnswerInput.disabled = !relaxGameState.active || relaxGameState.locked;
+  nodes.relaxAnswerInput.disabled = true;
   nodes.relaxSubmitBtn.disabled = !relaxGameState.active || relaxGameState.locked;
   nodes.relaxSkipBtn.disabled = !relaxGameState.active || relaxGameState.locked;
+  renderRelaxWordFavoriteState();
   renderRelaxScene();
 }
 
@@ -3659,6 +4452,20 @@ nodes.cet4DictionaryImportInput?.addEventListener("change", () =>
     inputNode: nodes.cet4DictionaryImportInput
   })
 );
+nodes.memoryDateInput?.addEventListener("change", renderMemoryPanel);
+nodes.memoryTodayBtn?.addEventListener("click", () => {
+  if (nodes.memoryDateInput) nodes.memoryDateInput.value = isoDate(new Date());
+  renderMemoryPanel();
+});
+nodes.memoryList?.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || target.type !== "checkbox" || !target.dataset.memoryReview) return;
+  if (!target.checked) {
+    renderMemoryPanel();
+    return;
+  }
+  reviewMemoryItem(target.dataset.memoryReview, nodes.memoryDateInput?.value || isoDate(new Date()));
+});
 nodes.dataBackupBtn.addEventListener("click", () => openModal(nodes.backupModal));
 nodes.exportDataBtn.addEventListener("click", exportAllData);
 nodes.importDataBtn.addEventListener("click", () => nodes.importDataInput.click());
@@ -3678,19 +4485,28 @@ nodes.utilityRelaxBtn?.addEventListener("click", () => {
   resetRelaxGameLobby();
   openModal(nodes.relaxGameModal);
 });
+nodes.utilityWordbookBtn?.addEventListener("click", () => {
+  renderMiniGameWordbooks();
+  openModal(nodes.wordbookModal);
+});
 nodes.restartGameBtn.addEventListener("click", setupGame);
 nodes.submitGameBtn.addEventListener("click", submitGameAnswer);
 nodes.nextGameBtn.addEventListener("click", advanceGame);
+nodes.favoriteGameWordBtn?.addEventListener("click", () => collectMemoryWord(currentGameWord, "六级小游戏", nodes.gameWordFavoriteStatus));
+nodes.slashGameWordBtn?.addEventListener("click", () => collectMasteredGameWord(currentGameWord, nodes.gameWordbookStatus));
 nodes.relaxStartMaleBtn?.addEventListener("click", () => startRelaxGame("male"));
 nodes.relaxStartFemaleBtn?.addEventListener("click", () => startRelaxGame("female"));
-nodes.relaxSubmitBtn?.addEventListener("click", submitRelaxGameAnswer);
-nodes.relaxSkipBtn?.addEventListener("click", skipRelaxQuestion);
+nodes.relaxSubmitBtn?.addEventListener("click", () => submitRelaxGameAnswer(true));
+nodes.relaxSkipBtn?.addEventListener("click", () => submitRelaxGameAnswer(false));
+nodes.favoriteRelaxWordBtn?.addEventListener("click", () =>
+  collectMemoryWord(relaxGameState.currentWord, "轻松一下", nodes.relaxWordFavoriteStatus)
+);
 nodes.relaxResetBtn?.addEventListener("click", resetRelaxGameLobby);
 nodes.relaxMuteBtn?.addEventListener("click", toggleRelaxMute);
 nodes.relaxAnswerInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
-    submitRelaxGameAnswer();
+    submitRelaxGameAnswer(true);
   }
 });
 nodes.scrollTopBtn?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -3727,6 +4543,7 @@ document.addEventListener("keydown", (event) => {
     closeModal(nodes.notesModal);
     closeModal(nodes.gameModal);
     closeModal(nodes.relaxGameModal);
+    closeModal(nodes.wordbookModal);
     closeModal(nodes.pomodoroModal);
     closeModal(nodes.reviewModal);
     closeModal(nodes.backupModal);

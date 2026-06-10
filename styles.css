@@ -28,6 +28,7 @@ body {
   font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
   color: var(--ink);
   background: var(--paper);
+  -webkit-text-size-adjust: 100%;
 }
 
 body.entry-active {
@@ -220,16 +221,14 @@ button {
 
 .feature-center-head {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 18px;
-  align-items: end;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
 }
 
 .feature-center-head h2 {
-  max-width: 680px;
-  text-align: right;
-  font-size: 22px;
+  display: none;
 }
 
 .feature-groups {
@@ -675,6 +674,131 @@ button {
 
 .dictionary-card em {
   font-family: Georgia, "Times New Roman", serif;
+}
+
+.memory-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin-top: 16px;
+}
+
+.memory-toolbar label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.memory-toolbar input {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+  color: var(--ink);
+  font: inherit;
+}
+
+.memory-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.memory-stats span,
+.memory-meta span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--green-dark);
+  background: #eef8f1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.memory-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.memory-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.memory-card.due {
+  border-color: rgba(47, 125, 92, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(47, 125, 92, 0.08);
+}
+
+.memory-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.memory-card-head strong {
+  color: var(--green-dark);
+  font-size: 20px;
+}
+
+.memory-card-head span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef8f1;
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.memory-card p,
+.memory-card em {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.memory-card em {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.memory-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memory-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef8f1;
+  color: var(--green-dark);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.memory-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.memory-check.done {
+  background: #e8f1ff;
+  color: var(--blue);
 }
 
 .dashboard-grid {
@@ -1527,10 +1651,11 @@ textarea:focus {
 .floating-rail {
   position: fixed;
   right: 18px;
-  bottom: 24px;
-  z-index: 18;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 28;
   display: grid;
   gap: 10px;
+  pointer-events: auto;
 }
 
 .rail-btn {
@@ -1549,6 +1674,91 @@ textarea:focus {
 .rail-btn:hover {
   border-color: var(--green);
   background: #eef8f1;
+}
+
+.game-wordbook-status {
+  padding: 10px 12px;
+  border: 1px dashed rgba(47, 125, 92, 0.28);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(244, 248, 245, 0.92);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wordbook-modal {
+  width: min(1080px, 100%);
+}
+
+.wordbook-summary {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: #f5f9f6;
+  line-height: 1.7;
+}
+
+.wordbook-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wordbook-section {
+  min-height: 280px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.wordbook-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.wordbook-card {
+  padding: 14px;
+  border: 1px solid rgba(47, 125, 92, 0.14);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(24, 32, 31, 0.05);
+}
+
+.wordbook-card-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wordbook-card-head strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.wordbook-phonetic,
+.wordbook-meta {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wordbook-translation,
+.wordbook-example {
+  margin: 10px 0 0;
+  line-height: 1.65;
+}
+
+.wordbook-example {
+  color: var(--muted);
+}
+
+.wordbook-meta {
+  margin-top: 10px;
 }
 
 .pixel-game-modal {
@@ -1788,6 +1998,35 @@ textarea:focus {
   width: 100%;
 }
 
+.pixel-judge-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 2px solid rgba(54, 89, 75, 0.24);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #fffef7, #edf5df),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 10px, transparent 10px 20px);
+}
+
+.pixel-judge-word {
+  margin: 0;
+  color: #21473a;
+  font-size: clamp(28px, 4.2vw, 42px);
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: none;
+  word-break: break-word;
+}
+
+.pixel-judge-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
 .pixel-feedback {
   min-height: 52px;
   display: grid;
@@ -1992,6 +2231,14 @@ textarea:focus {
   gap: 10px;
 }
 
+.game-word-status {
+  min-height: 22px;
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 @media (max-width: 900px) {
   .feature-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2054,11 +2301,24 @@ textarea:focus {
 
   .floating-rail {
     right: 14px;
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modal-layer {
+    padding: 14px;
+  }
+
+  .modal-card {
+    width: min(100%, 920px);
+    max-height: calc(100vh - 28px);
   }
 }
 
 @media (max-width: 620px) {
+  .app-shell {
+    padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px));
+  }
+
   .feature-center,
   .feature-panel {
     width: calc(100% - 20px);
@@ -2068,8 +2328,53 @@ textarea:focus {
     padding: 14px;
   }
 
+  .entry-screen {
+    padding: 12px;
+  }
+
+  .entry-theme-picker {
+    top: 10px;
+    left: 10px;
+    width: calc(100% - 20px);
+    padding: 10px;
+  }
+
+  .entry-theme-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 7px;
+  }
+
+  .entry-content {
+    width: calc(100% - 8px);
+    padding: 94px 4px 14px;
+  }
+
+  .entry-content p:not(.entry-kicker) {
+    margin-bottom: 22px;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .entry-start-btn {
+    width: min(100%, 320px);
+  }
+
   .feature-groups {
     grid-template-columns: 1fr;
+  }
+
+  .feature-group {
+    padding: 12px;
+  }
+
+  .feature-btn {
+    min-height: 72px;
+    padding: 12px;
+  }
+
+  .feature-btn span {
+    font-size: 13px;
+    line-height: 1.5;
   }
 
   .english-head,
@@ -2089,16 +2394,17 @@ textarea:focus {
   }
 
   .hero {
-    min-height: 560px;
+    min-height: 500px;
   }
 
   .hero-content {
     width: calc(100% - 28px);
-    margin-bottom: 46px;
+    margin-bottom: 32px;
   }
 
   .hero-copy {
     font-size: 16px;
+    line-height: 1.7;
   }
 
   .workspace,
@@ -2112,6 +2418,24 @@ textarea:focus {
 
   .planner {
     padding: 14px;
+  }
+
+  .sidebar {
+    padding: 14px;
+  }
+
+  .book-list {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 82vw);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+  }
+
+  .book-item {
+    min-height: 94px;
+    scroll-snap-align: start;
   }
 
   .editor {
@@ -2132,6 +2456,12 @@ textarea:focus {
     flex-direction: column;
   }
 
+  #quickAddForm .primary-btn,
+  .hero-actions .primary-btn,
+  .hero-actions .ghost-btn {
+    width: 100%;
+  }
+
   .dictionary-page-size {
     justify-content: space-between;
   }
@@ -2145,8 +2475,29 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .memory-list {
+    grid-template-columns: 1fr;
+  }
+
+  .favorite-list,
+  .mistake-list,
+  .subject-bars,
+  .dashboard-stats,
+  .countdown-list {
+    gap: 10px;
+  }
+
+  .mistake-card-head,
+  .memory-card-head,
+  .wordbook-card-head,
+  .dictionary-card div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .pixel-game-modal {
-    padding: 14px;
+    padding: 12px;
+    max-height: calc(100vh - 16px);
   }
 
   .pixel-game-sidebar,
@@ -2157,17 +2508,29 @@ textarea:focus {
   .floating-rail {
     right: 10px;
     left: 10px;
-    bottom: 10px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid rgba(65, 101, 72, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 18px 34px rgba(19, 42, 31, 0.14);
+    backdrop-filter: blur(12px);
   }
 
   .rail-btn {
     min-width: 0;
+    min-height: 46px;
+    padding: 0 6px;
+    font-size: 12px;
   }
 
   .hero-actions,
   .toolbar-actions {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .note-controls,
@@ -2178,8 +2541,38 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .wordbook-grid {
+    grid-template-columns: 1fr;
+  }
+
   .game-status {
     display: grid;
+  }
+
+  .modal-layer {
+    padding: 8px;
+    align-items: end;
+  }
+
+  .modal-card,
+  .wordbook-modal,
+  .pixel-game-modal {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .modal-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
   }
 
   .heatmap-grid {
@@ -2193,5 +2586,50 @@ textarea:focus {
   .heatmap-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  h1 {
+    font-size: 38px;
+  }
+
+  .entry-theme-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .hero {
+    min-height: 470px;
+  }
+
+  .hero-copy,
+  .english-text {
+    font-size: 15px;
+  }
+
+  .feature-center,
+  .feature-panel,
+  .workspace,
+  .add-book,
+  .top-hub {
+    width: calc(100% - 16px);
+  }
+
+  .feature-center {
+    padding: 12px;
+  }
+
+  .planner,
+  .dictionary-panel,
+  .mistake-editor,
+  .mistake-library,
+  .daily-english,
+  .english-favorites,
+  .dashboard-card {
+    padding: 12px;
+  }
+
+  .book-list {
+    grid-auto-columns: minmax(210px, 86vw);
   }
 }
