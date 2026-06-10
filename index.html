@@ -504,6 +504,107 @@
       </section>
     </div>
 
+    <div class="modal-layer" id="relaxGameModal" aria-hidden="true">
+      <section class="modal-card pixel-game-modal" role="dialog" aria-modal="true" aria-labelledby="relaxGameTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">轻松一下</p>
+            <h2 id="relaxGameTitle">像素草原英语闯关</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="relaxGameModal">×</button>
+        </div>
+        <div class="pixel-game-shell">
+          <aside class="pixel-game-sidebar">
+            <section class="pixel-panel">
+              <p class="kicker">角色选择</p>
+              <div class="pixel-hero-picks">
+                <button class="hero-pick" id="relaxStartMaleBtn" type="button">
+                  <strong>男角色</strong>
+                  <span>蓝铠剑士</span>
+                </button>
+                <button class="hero-pick" id="relaxStartFemaleBtn" type="button">
+                  <strong>女角色</strong>
+                  <span>红巾游侠</span>
+                </button>
+              </div>
+              <p class="pixel-small-note" id="relaxGameSummary">每次进入都会重新选择角色，然后从第 1 关开始。</p>
+            </section>
+
+            <section class="pixel-panel pixel-stats">
+              <div class="pixel-stat-row">
+                <span>角色</span>
+                <strong id="relaxHeroName">待选择</strong>
+              </div>
+              <div class="pixel-stat-row">
+                <span>关卡</span>
+                <strong id="relaxStageBadge">第 1 关</strong>
+              </div>
+              <div class="pixel-stat-row">
+                <span>敌人</span>
+                <strong id="relaxEnemyName">草原守望者</strong>
+              </div>
+              <div class="pixel-stat-row">
+                <span>进度</span>
+                <strong id="relaxProgressText">0 / 0</strong>
+              </div>
+              <div class="pixel-stat-row">
+                <span>得分</span>
+                <strong id="relaxScoreText">0</strong>
+              </div>
+            </section>
+
+            <section class="pixel-panel">
+              <div class="pixel-hp-card">
+                <div class="pixel-hp-label">
+                  <span>我方生命</span>
+                  <strong id="relaxHeroHpText">100 / 100</strong>
+                </div>
+                <div class="pixel-hp-bar"><i id="relaxHeroHpBar"></i></div>
+              </div>
+              <div class="pixel-hp-card">
+                <div class="pixel-hp-label">
+                  <span>敌方生命</span>
+                  <strong id="relaxEnemyHpText">0 / 0</strong>
+                </div>
+                <div class="pixel-hp-bar enemy"><i id="relaxEnemyHpBar"></i></div>
+              </div>
+            </section>
+
+            <section class="pixel-panel pixel-side-actions">
+              <button class="ghost-light-btn" id="relaxMuteBtn" type="button">静音</button>
+              <button class="ghost-light-btn" id="relaxResetBtn" type="button">重新闯关</button>
+            </section>
+          </aside>
+
+          <section class="pixel-game-main">
+            <div class="pixel-scene-wrap">
+              <canvas id="relaxGameCanvas" width="1600" height="900" aria-label="像素闯关场景"></canvas>
+              <div class="pixel-scene-caption" id="relaxStageCounter">请选择角色，准备出发。</div>
+            </div>
+
+            <section class="pixel-quiz-card">
+              <div class="pixel-quiz-head">
+                <div>
+                  <p class="kicker">当前挑战</p>
+                  <h3 id="relaxPromptCn">点击左侧角色开始闯关</h3>
+                </div>
+                <span class="pixel-boss-tag" id="relaxBossBadge">普通关</span>
+              </div>
+              <label class="pixel-answer-label">
+                写出对应英语
+                <input id="relaxAnswerInput" type="text" autocomplete="off" placeholder="例如：challenge" />
+              </label>
+              <div class="pixel-action-row">
+                <button class="primary-btn" id="relaxSubmitBtn" type="button">出招</button>
+                <button class="ghost-light-btn" id="relaxSkipBtn" type="button">换一题</button>
+              </div>
+              <div class="game-feedback pixel-feedback" id="relaxFeedback">选好角色后，按中文提示写出英语单词，答对就能击退敌人。</div>
+            </section>
+          </section>
+        </div>
+      </section>
+    </div>
+
     <div class="modal-layer" id="pomodoroModal" aria-hidden="true">
       <section class="modal-card pomodoro-modal" role="dialog" aria-modal="true" aria-labelledby="pomodoroTitle">
         <div class="modal-head">
@@ -608,6 +709,12 @@
         <span class="book-meta"></span>
       </button>
     </template>
+
+    <div class="floating-rail" aria-label="快捷工具">
+      <button class="rail-btn" id="utilityNotesBtn" type="button">记事本</button>
+      <button class="rail-btn" id="utilityRelaxBtn" type="button">轻松一下</button>
+      <button class="rail-btn" id="scrollTopBtn" type="button">回到顶部</button>
+    </div>
 
     <script src="assets/cet6-dictionary.js"></script>
     <script src="app.js"></script>

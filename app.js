@@ -6,6 +6,7 @@ const THEME_KEY = "smart-study-entry-theme-v1";
 const ENGLISH_FAVORITES_KEY = "smart-study-english-favorites-v1";
 const MISTAKE_KEY = "smart-study-mistakes-v1";
 const DICTIONARY_KEY = "smart-study-cet6-dictionary-v1";
+const CET4_DICTIONARY_KEY = "smart-study-cet4-dictionary-v1";
 
 const today = new Date();
 const isoDate = (date) => date.toISOString().slice(0, 10);
@@ -69,6 +70,8 @@ let currentYearFilter = "all";
 let bookSearchQuery = "";
 let dictionaryPage = 1;
 let dictionaryPageSize = 48;
+let cet4DictionaryPage = 1;
+let cet4DictionaryPageSize = 48;
 
 const entryThemes = [
   ["forest", "#2f7d5c", "#1e5c43", "#2f6f9f", "#f8faf7", "linear-gradient(120deg, rgba(9,28,22,.82), rgba(47,125,92,.46)), url('assets/study-desk.png') center / cover", "linear-gradient(135deg,#1e5c43,#78c69a)"],
@@ -184,6 +187,16 @@ const nodes = {
   dictionaryPageInfo: document.querySelector("#dictionaryPageInfo"),
   importDictionaryBtn: document.querySelector("#importDictionaryBtn"),
   dictionaryImportInput: document.querySelector("#dictionaryImportInput"),
+  cet4DictionarySearchInput: document.querySelector("#cet4DictionarySearchInput"),
+  cet4DictionaryStats: document.querySelector("#cet4DictionaryStats"),
+  cet4DictionaryStatus: document.querySelector("#cet4DictionaryStatus"),
+  cet4DictionaryResults: document.querySelector("#cet4DictionaryResults"),
+  cet4DictionaryPageSize: document.querySelector("#cet4DictionaryPageSize"),
+  cet4DictionaryPrevBtn: document.querySelector("#cet4DictionaryPrevBtn"),
+  cet4DictionaryNextBtn: document.querySelector("#cet4DictionaryNextBtn"),
+  cet4DictionaryPageInfo: document.querySelector("#cet4DictionaryPageInfo"),
+  importCet4DictionaryBtn: document.querySelector("#importCet4DictionaryBtn"),
+  cet4DictionaryImportInput: document.querySelector("#cet4DictionaryImportInput"),
   mistakeForm: document.querySelector("#mistakeForm"),
   mistakeDate: document.querySelector("#mistakeDate"),
   mistakeSubject: document.querySelector("#mistakeSubject"),
@@ -213,11 +226,13 @@ const nodes = {
   generateAllBtn: document.querySelector("#generateAllBtn"),
   notesBtn: document.querySelector("#notesBtn"),
   gameBtn: document.querySelector("#gameBtn"),
+  relaxGameBtn: document.querySelector("#relaxGameBtn"),
   pomodoroBtn: document.querySelector("#pomodoroBtn"),
   reviewBtn: document.querySelector("#reviewBtn"),
   dataBackupBtn: document.querySelector("#dataBackupBtn"),
   notesModal: document.querySelector("#notesModal"),
   gameModal: document.querySelector("#gameModal"),
+  relaxGameModal: document.querySelector("#relaxGameModal"),
   pomodoroModal: document.querySelector("#pomodoroModal"),
   reviewModal: document.querySelector("#reviewModal"),
   backupModal: document.querySelector("#backupModal"),
@@ -250,6 +265,31 @@ const nodes = {
   gameScore: document.querySelector("#gameScore"),
   gameMessage: document.querySelector("#gameMessage"),
   restartGameBtn: document.querySelector("#restartGameBtn"),
+  relaxStartMaleBtn: document.querySelector("#relaxStartMaleBtn"),
+  relaxStartFemaleBtn: document.querySelector("#relaxStartFemaleBtn"),
+  relaxHeroName: document.querySelector("#relaxHeroName"),
+  relaxStageBadge: document.querySelector("#relaxStageBadge"),
+  relaxEnemyName: document.querySelector("#relaxEnemyName"),
+  relaxProgressText: document.querySelector("#relaxProgressText"),
+  relaxScoreText: document.querySelector("#relaxScoreText"),
+  relaxHeroHpText: document.querySelector("#relaxHeroHpText"),
+  relaxEnemyHpText: document.querySelector("#relaxEnemyHpText"),
+  relaxHeroHpBar: document.querySelector("#relaxHeroHpBar"),
+  relaxEnemyHpBar: document.querySelector("#relaxEnemyHpBar"),
+  relaxMuteBtn: document.querySelector("#relaxMuteBtn"),
+  relaxResetBtn: document.querySelector("#relaxResetBtn"),
+  relaxGameSummary: document.querySelector("#relaxGameSummary"),
+  relaxGameCanvas: document.querySelector("#relaxGameCanvas"),
+  relaxStageCounter: document.querySelector("#relaxStageCounter"),
+  relaxPromptCn: document.querySelector("#relaxPromptCn"),
+  relaxBossBadge: document.querySelector("#relaxBossBadge"),
+  relaxAnswerInput: document.querySelector("#relaxAnswerInput"),
+  relaxSubmitBtn: document.querySelector("#relaxSubmitBtn"),
+  relaxSkipBtn: document.querySelector("#relaxSkipBtn"),
+  relaxFeedback: document.querySelector("#relaxFeedback"),
+  utilityNotesBtn: document.querySelector("#utilityNotesBtn"),
+  utilityRelaxBtn: document.querySelector("#utilityRelaxBtn"),
+  scrollTopBtn: document.querySelector("#scrollTopBtn"),
   heatmapGrid: document.querySelector("#heatmapGrid"),
   heatmapToggleButtons: document.querySelectorAll("[data-heatmap-view]"),
   exportWeeklyImageBtn: document.querySelector("#exportWeeklyImageBtn"),
@@ -270,7 +310,7 @@ const nodes = {
 
 const NOTE_KEY = "smart-study-note-v1";
 function getBackupKeys() {
-  return [STORAGE_KEY, DONE_KEY, FOCUS_KEY, REVIEW_KEY, THEME_KEY, NOTE_KEY, ENGLISH_FAVORITES_KEY, MISTAKE_KEY, DICTIONARY_KEY];
+  return [STORAGE_KEY, DONE_KEY, FOCUS_KEY, REVIEW_KEY, THEME_KEY, NOTE_KEY, ENGLISH_FAVORITES_KEY, MISTAKE_KEY, DICTIONARY_KEY, CET4_DICTIONARY_KEY];
 }
 
 const dailyEnglishStories = [
@@ -651,6 +691,13 @@ const cleanCet6BuiltInWords = Array.isArray(builtInCet6Source?.words)
 const cleanCet6Phrases = Array.isArray(builtInCet6Source?.phrases)
   ? builtInCet6Source.phrases.map((entry) => normalizeDictionaryEntry(entry, "phrase")).filter(Boolean)
   : [];
+const builtInCet4Source = globalThis.CET4_DICTIONARY || null;
+const cleanCet4BuiltInWords = Array.isArray(builtInCet4Source?.words)
+  ? builtInCet4Source.words.map((entry) => normalizeDictionaryEntry(entry, "word")).filter(Boolean)
+  : [];
+const cleanCet4Phrases = Array.isArray(builtInCet4Source?.phrases)
+  ? builtInCet4Source.phrases.map((entry) => normalizeDictionaryEntry(entry, "phrase")).filter(Boolean)
+  : [];
 let gameDeck = [];
 let currentGameWord = null;
 let gameRound = 0;
@@ -658,6 +705,12 @@ let gameTotalScore = 0;
 let selectedEnglish = null;
 let selectedChinese = null;
 let matchedPairs = new Set();
+let relaxGameState = createRelaxGameState();
+let relaxGameFrame = 0;
+let relaxGameAnimationId = 0;
+let relaxAudioContext = null;
+let relaxMusicTimer = null;
+let relaxAdvanceTimer = 0;
 
 let doneState = loadDoneState();
 let focusState = loadObject(FOCUS_KEY);
@@ -665,6 +718,7 @@ let reviewState = loadObject(REVIEW_KEY);
 let englishFavoriteState = loadObject(ENGLISH_FAVORITES_KEY);
 let mistakeState = normalizeMistakeState(loadObject(MISTAKE_KEY));
 let dictionaryState = normalizeDictionaryState(loadObject(DICTIONARY_KEY));
+let cet4DictionaryState = normalizeDictionaryState(loadObject(CET4_DICTIONARY_KEY));
 let currentDailyEnglishStory = null;
 let currentDailyEnglishIndex = 0;
 let currentMistakeStar = 3;
@@ -748,6 +802,10 @@ function saveMistakeState() {
 
 function saveDictionaryState() {
   localStorage.setItem(DICTIONARY_KEY, JSON.stringify(dictionaryState));
+}
+
+function saveCet4DictionaryState() {
+  localStorage.setItem(CET4_DICTIONARY_KEY, JSON.stringify(cet4DictionaryState));
 }
 
 function normalizeMistakeState(raw) {
@@ -875,17 +933,29 @@ function renderEnglishFavorites() {
   });
 }
 
+function withBuiltInSource(entries, type) {
+  return entries.map((item) => ({ ...item, type, source: "built-in" }));
+}
+
 function builtInDictionaryWords() {
   const sourceWords = cleanCet6BuiltInWords.length ? cleanCet6BuiltInWords : cleanCet6Words;
-  return sourceWords.map((item) => ({ ...item, type: "word", source: "built-in" }));
+  return withBuiltInSource(sourceWords, "word");
 }
 
 function builtInDictionaryPhrases() {
-  return cleanCet6Phrases.map((item) => ({ ...item, type: "phrase", source: "built-in" }));
+  return withBuiltInSource(cleanCet6Phrases, "phrase");
 }
 
-function getDictionaryEntries() {
-  const entries = [...builtInDictionaryWords(), ...builtInDictionaryPhrases(), ...dictionaryState.words, ...dictionaryState.phrases];
+function builtInCet4DictionaryWords() {
+  return withBuiltInSource(cleanCet4BuiltInWords, "word");
+}
+
+function builtInCet4DictionaryPhrases() {
+  return withBuiltInSource(cleanCet4Phrases, "phrase");
+}
+
+function getDictionaryEntriesFromSources(builtInWords, builtInPhrases, customDictionaryState) {
+  const entries = [...builtInWords, ...builtInPhrases, ...customDictionaryState.words, ...customDictionaryState.phrases];
   const seen = new Set();
   return entries.filter((entry) => {
     const key = `${entry.type || "word"}::${entry.word.toLowerCase()}`;
@@ -893,6 +963,14 @@ function getDictionaryEntries() {
     seen.add(key);
     return true;
   });
+}
+
+function getDictionaryEntries() {
+  return getDictionaryEntriesFromSources(builtInDictionaryWords(), builtInDictionaryPhrases(), dictionaryState);
+}
+
+function getCet4DictionaryEntries() {
+  return getDictionaryEntriesFromSources(builtInCet4DictionaryWords(), builtInCet4DictionaryPhrases(), cet4DictionaryState);
 }
 
 function getGameWordPool() {
@@ -907,42 +985,39 @@ function getGameWordPool() {
     }));
 }
 
-function renderDictionary() {
-  if (!nodes.dictionaryResults) return;
-  const allEntries = getDictionaryEntries();
-  const query = nodes.dictionarySearchInput.value.trim().toLowerCase();
+function renderDictionaryPanel(panelNodes, panelState, allEntries, counts) {
+  if (!panelNodes.results) return panelState;
+  const query = panelNodes.searchInput?.value.trim().toLowerCase() || "";
   const matches = allEntries
     .filter((entry) => {
       if (!query) return true;
       return [entry.word, entry.translation, entry.example, entry.phonetic, ...(entry.keywords || [])].join(" ").toLowerCase().includes(query);
     });
 
-  const showAll = dictionaryPageSize === "all";
-  const pageSize = showAll ? matches.length || 1 : Math.max(1, Number(dictionaryPageSize) || 48);
+  const showAll = panelState.pageSize === "all";
+  const pageSize = showAll ? matches.length || 1 : Math.max(1, Number(panelState.pageSize) || 48);
   const totalPages = showAll ? 1 : Math.max(1, Math.ceil(matches.length / pageSize));
-  dictionaryPage = Math.min(Math.max(1, dictionaryPage), totalPages);
-  const startIndex = showAll ? 0 : (dictionaryPage - 1) * pageSize;
+  const nextPage = Math.min(Math.max(1, panelState.page), totalPages);
+  const startIndex = showAll ? 0 : (nextPage - 1) * pageSize;
   const endIndex = showAll ? matches.length : Math.min(matches.length, startIndex + pageSize);
   const visibleMatches = matches.slice(startIndex, endIndex);
 
-  const wordCount = builtInDictionaryWords().length + dictionaryState.words.length;
-  const phraseCount = builtInDictionaryPhrases().length + dictionaryState.phrases.length;
-  nodes.dictionaryStats.innerHTML = `
-    <span>当前单词 ${wordCount}</span>
-    <span>当前词组 ${phraseCount}</span>
+  panelNodes.stats.innerHTML = `
+    <span>当前单词 ${counts.wordCount}</span>
+    <span>当前词组 ${counts.phraseCount}</span>
     <span>搜索结果 ${matches.length}</span>
   `;
-  if (nodes.dictionaryPageInfo) {
-    nodes.dictionaryPageInfo.textContent = showAll
+  if (panelNodes.pageInfo) {
+    panelNodes.pageInfo.textContent = showAll
       ? `已显示全部 ${matches.length} 条`
-      : `第 ${dictionaryPage} / ${totalPages} 页 · ${matches.length ? `${startIndex + 1}-${endIndex}` : "0"} / ${matches.length}`;
+      : `第 ${nextPage} / ${totalPages} 页 · ${matches.length ? `${startIndex + 1}-${endIndex}` : "0"} / ${matches.length}`;
   }
-  if (nodes.dictionaryPrevBtn) nodes.dictionaryPrevBtn.disabled = showAll || dictionaryPage <= 1;
-  if (nodes.dictionaryNextBtn) nodes.dictionaryNextBtn.disabled = showAll || dictionaryPage >= totalPages;
-  nodes.dictionaryResults.innerHTML = "";
+  if (panelNodes.prevBtn) panelNodes.prevBtn.disabled = showAll || nextPage <= 1;
+  if (panelNodes.nextBtn) panelNodes.nextBtn.disabled = showAll || nextPage >= totalPages;
+  panelNodes.results.innerHTML = "";
   if (!matches.length) {
-    nodes.dictionaryResults.innerHTML = `<div class="empty-book-list">没有找到匹配项。可以换个英文、中文释义或音标关键词试试。</div>`;
-    return;
+    panelNodes.results.innerHTML = `<div class="empty-book-list">没有找到匹配项。可以换个英文、中文释义或音标关键词试试。</div>`;
+    return { page: nextPage, pageSize: panelState.pageSize };
   }
   visibleMatches.forEach((entry) => {
     const card = document.createElement("article");
@@ -956,20 +1031,71 @@ function renderDictionary() {
       <p>${entry.translation || "暂无释义"}</p>
       ${entry.example ? `<em>${entry.example}</em>` : ""}
     `;
-    nodes.dictionaryResults.append(card);
+    panelNodes.results.append(card);
+  });
+  return { page: nextPage, pageSize: panelState.pageSize };
+}
+
+function renderDictionary() {
+  const nextState = renderDictionaryPanel(
+    {
+      searchInput: nodes.dictionarySearchInput,
+      stats: nodes.dictionaryStats,
+      results: nodes.dictionaryResults,
+      pageInfo: nodes.dictionaryPageInfo,
+      prevBtn: nodes.dictionaryPrevBtn,
+      nextBtn: nodes.dictionaryNextBtn
+    },
+    { page: dictionaryPage, pageSize: dictionaryPageSize },
+    getDictionaryEntries(),
+    {
+      wordCount: builtInDictionaryWords().length + dictionaryState.words.length,
+      phraseCount: builtInDictionaryPhrases().length + dictionaryState.phrases.length
+    }
+  );
+  dictionaryPage = nextState.page;
+  dictionaryPageSize = nextState.pageSize;
+}
+
+function renderCet4Dictionary() {
+  const nextState = renderDictionaryPanel(
+    {
+      searchInput: nodes.cet4DictionarySearchInput,
+      stats: nodes.cet4DictionaryStats,
+      results: nodes.cet4DictionaryResults,
+      pageInfo: nodes.cet4DictionaryPageInfo,
+      prevBtn: nodes.cet4DictionaryPrevBtn,
+      nextBtn: nodes.cet4DictionaryNextBtn
+    },
+    { page: cet4DictionaryPage, pageSize: cet4DictionaryPageSize },
+    getCet4DictionaryEntries(),
+    {
+      wordCount: builtInCet4DictionaryWords().length + cet4DictionaryState.words.length,
+      phraseCount: builtInCet4DictionaryPhrases().length + cet4DictionaryState.phrases.length
+    }
+  );
+  cet4DictionaryPage = nextState.page;
+  cet4DictionaryPageSize = nextState.pageSize;
+}
+
+function mergeDictionaryState(currentState, nextDictionary) {
+  return normalizeDictionaryState({
+    words: [...currentState.words, ...nextDictionary.words],
+    phrases: [...currentState.phrases, ...nextDictionary.phrases]
   });
 }
 
 function mergeDictionary(nextDictionary) {
-  const merged = normalizeDictionaryState({
-    words: [...dictionaryState.words, ...nextDictionary.words],
-    phrases: [...dictionaryState.phrases, ...nextDictionary.phrases]
-  });
-  dictionaryState = merged;
+  dictionaryState = mergeDictionaryState(dictionaryState, nextDictionary);
   saveDictionaryState();
 }
 
-function importDictionaryFile(file) {
+function mergeCet4Dictionary(nextDictionary) {
+  cet4DictionaryState = mergeDictionaryState(cet4DictionaryState, nextDictionary);
+  saveCet4DictionaryState();
+}
+
+function importDictionaryFile(file, options) {
   if (!file) return;
   const reader = new FileReader();
   reader.addEventListener("load", () => {
@@ -979,14 +1105,14 @@ function importDictionaryFile(file) {
       if (!nextDictionary.words.length && !nextDictionary.phrases.length) {
         throw new Error("没有识别到 words 或 phrases 数据");
       }
-      mergeDictionary(nextDictionary);
-      nodes.dictionaryStatus.textContent = `导入成功：新增 ${nextDictionary.words.length} 个单词、${nextDictionary.phrases.length} 个词组。`;
-      renderDictionary();
-      setupGame();
+      options.merge(nextDictionary);
+      options.statusNode.textContent = `导入成功：新增 ${nextDictionary.words.length} 个单词、${nextDictionary.phrases.length} 个词组。`;
+      options.render();
+      options.afterImport?.();
     } catch (error) {
-      nodes.dictionaryStatus.textContent = `导入失败：${error.message}`;
+      options.statusNode.textContent = `导入失败：${error.message}`;
     } finally {
-      nodes.dictionaryImportInput.value = "";
+      options.inputNode.value = "";
     }
   });
   reader.readAsText(file, "utf-8");
@@ -1810,6 +1936,7 @@ function refreshStateAfterImport() {
   englishFavoriteState = loadObject(ENGLISH_FAVORITES_KEY);
   mistakeState = normalizeMistakeState(loadObject(MISTAKE_KEY));
   dictionaryState = normalizeDictionaryState(loadObject(DICTIONARY_KEY));
+  cet4DictionaryState = normalizeDictionaryState(loadObject(CET4_DICTIONARY_KEY));
   applyEntryTheme(localStorage.getItem(THEME_KEY) || entryThemes[0][0]);
   renderDailyEnglish();
   render();
@@ -2173,17 +2300,27 @@ function render() {
   renderMistakeStars();
   renderMistakes();
   renderDictionary();
+  renderCet4Dictionary();
   renderDashboard();
 }
 
 function openModal(modal) {
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
+  if (modal === nodes.relaxGameModal) {
+    startRelaxSceneLoop();
+    if (!relaxGameState.muted) startRelaxMusic();
+  }
 }
 
 function closeModal(modal) {
   modal.classList.remove("open");
   modal.setAttribute("aria-hidden", "true");
+  if (modal === nodes.relaxGameModal) {
+    resetRelaxAdvanceTimer();
+    stopRelaxMusic();
+    stopRelaxSceneLoop();
+  }
 }
 
 function loadNote() {
@@ -2458,6 +2595,806 @@ function advanceGame() {
   nextGameQuestion();
 }
 
+const relaxEnemyCatalog = [
+  { name: "草团史莱姆", kind: "slime" },
+  { name: "跳跳角兔", kind: "rabbit" },
+  { name: "苔原野猪", kind: "boar" },
+  { name: "风羽乌鸦", kind: "crow" },
+  { name: "仙人掌兽", kind: "cactus" },
+  { name: "蘑菇守卫", kind: "mushroom" }
+];
+
+const relaxBossCatalog = [
+  { name: "巨角草原王", kind: "buffalo" },
+  { name: "岩甲魔像", kind: "golem" },
+  { name: "烈日狮王", kind: "lion" },
+  { name: "雷羽鹰王", kind: "hawk" },
+  { name: "荒野幼龙", kind: "dragon" }
+];
+
+const RELAX_SCENE = {
+  width: 160,
+  height: 90,
+  pixel: 10,
+  finePixel: 5,
+  canvasWidth: 1600,
+  canvasHeight: 900
+};
+
+const relaxMelody = [64, 67, 71, 72, 71, 67, 64, 62, 64, 67, 69, 71, 69, 67, 64, 62];
+const relaxBossMelody = [48, 52, 55, 60, 55, 52, 48, 43, 48, 52, 57, 60, 57, 52, 48, 45];
+
+function createRelaxGameState() {
+  return {
+    active: false,
+    heroGender: "",
+    heroName: "待选择",
+    heroHp: 100,
+    heroMaxHp: 100,
+    enemyHp: 0,
+    enemyMaxHp: 0,
+    stage: 1,
+    score: 0,
+    defeated: 0,
+    wordCursor: 0,
+    queue: [],
+    currentWord: null,
+    currentEnemy: null,
+    isBoss: false,
+    locked: true,
+    muted: false,
+    fxType: "",
+    fxFrame: 0,
+    fxMax: 0,
+    fxSide: "",
+    bossIntro: 0,
+    screenShake: 0,
+    enemyFlash: 0,
+    heroFlash: 0,
+    feedback: "选好角色后，按中文提示写出英语单词，答对就能击退敌人。"
+  };
+}
+
+function buildRelaxGameQueue() {
+  const seen = new Set();
+  return shuffle(getGameWordPool()).filter((item) => {
+    const key = String(item.word || "").toLowerCase();
+    if (!key || seen.has(key) || !/^[a-z][a-z-]*$/i.test(key)) return false;
+    seen.add(key);
+    return Boolean(item.translation);
+  });
+}
+
+function resetRelaxAdvanceTimer() {
+  if (relaxAdvanceTimer) {
+    clearTimeout(relaxAdvanceTimer);
+    relaxAdvanceTimer = 0;
+  }
+}
+
+function resetRelaxGameLobby() {
+  const muted = relaxGameState.muted;
+  resetRelaxAdvanceTimer();
+  relaxGameState = createRelaxGameState();
+  relaxGameState.muted = muted;
+  stopRelaxMusic();
+  if (nodes.relaxGameModal?.classList.contains("open") && !relaxGameState.muted) startRelaxMusic();
+  renderRelaxGame();
+}
+
+function ensureRelaxQueue() {
+  if (!relaxGameState.queue.length) {
+    relaxGameState.queue = buildRelaxGameQueue();
+  }
+}
+
+function pickRelaxEnemy(stage, isBoss) {
+  const source = isBoss ? relaxBossCatalog : relaxEnemyCatalog;
+  const profile = source[(Math.max(stage, 1) - 1) % source.length];
+  return { ...profile, stage };
+}
+
+function currentRelaxWord() {
+  ensureRelaxQueue();
+  const word = relaxGameState.queue[relaxGameState.wordCursor % relaxGameState.queue.length];
+  return word || { word: "challenge", translation: "挑战", keywords: ["挑战"], example: "" };
+}
+
+function triggerRelaxVisualFx(type, duration = 12, side = "enemy", shake = 0) {
+  relaxGameState.fxType = type;
+  relaxGameState.fxFrame = duration;
+  relaxGameState.fxMax = duration;
+  relaxGameState.fxSide = side;
+  relaxGameState.screenShake = Math.max(relaxGameState.screenShake, shake);
+  if (side === "enemy") relaxGameState.enemyFlash = Math.max(relaxGameState.enemyFlash, duration);
+  if (side === "hero") relaxGameState.heroFlash = Math.max(relaxGameState.heroFlash, duration);
+}
+
+function stepRelaxVisualFx() {
+  if (relaxGameState.fxFrame > 0) relaxGameState.fxFrame -= 1;
+  else relaxGameState.fxType = "";
+  if (relaxGameState.bossIntro > 0) relaxGameState.bossIntro -= 1;
+  if (relaxGameState.screenShake > 0) relaxGameState.screenShake -= 1;
+  if (relaxGameState.enemyFlash > 0) relaxGameState.enemyFlash -= 1;
+  if (relaxGameState.heroFlash > 0) relaxGameState.heroFlash -= 1;
+}
+
+function spawnRelaxStage() {
+  relaxGameState.isBoss = relaxGameState.stage % 10 === 0;
+  relaxGameState.currentEnemy = pickRelaxEnemy(relaxGameState.stage, relaxGameState.isBoss);
+  relaxGameState.enemyMaxHp = relaxGameState.isBoss ? 3 : 1;
+  relaxGameState.enemyHp = relaxGameState.enemyMaxHp;
+  relaxGameState.currentWord = currentRelaxWord();
+  relaxGameState.locked = false;
+  relaxGameState.bossIntro = relaxGameState.isBoss ? 34 : 0;
+  relaxGameState.feedback = relaxGameState.isBoss
+    ? `Boss 登场：${relaxGameState.currentEnemy.name}。连续答对 3 次才能击退它。`
+    : `第 ${relaxGameState.stage} 关开始，答对当前中文提示就能击退 ${relaxGameState.currentEnemy.name}。`;
+  triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-intro" : "spawn", relaxGameState.isBoss ? 22 : 10, "enemy", relaxGameState.isBoss ? 4 : 2);
+  if (nodes.relaxAnswerInput) nodes.relaxAnswerInput.value = "";
+  renderRelaxGame();
+}
+
+function startRelaxGame(gender) {
+  resetRelaxAdvanceTimer();
+  const muted = relaxGameState.muted;
+  relaxGameState = createRelaxGameState();
+  relaxGameState.muted = muted;
+  relaxGameState.active = true;
+  relaxGameState.heroGender = gender;
+  relaxGameState.heroName = gender === "male" ? "蓝铠剑士" : "红巾游侠";
+  relaxGameState.queue = buildRelaxGameQueue();
+  spawnRelaxStage();
+  startRelaxSceneLoop();
+  startRelaxMusic();
+  nodes.relaxAnswerInput?.focus();
+}
+
+function normalizeRelaxAnswer(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z-]/g, "");
+}
+
+function updateRelaxPromptForNextHit() {
+  relaxGameState.currentWord = currentRelaxWord();
+  if (nodes.relaxAnswerInput) nodes.relaxAnswerInput.value = "";
+}
+
+function finishRelaxRun(message) {
+  relaxGameState.active = false;
+  relaxGameState.locked = true;
+  relaxGameState.feedback = message;
+  stopRelaxMusic();
+  renderRelaxGame();
+}
+
+function submitRelaxGameAnswer() {
+  if (relaxGameState.locked || !relaxGameState.heroGender || !relaxGameState.currentWord) return;
+  const answer = nodes.relaxAnswerInput.value.trim();
+  if (!answer) {
+    relaxGameState.feedback = "先写出英文答案，再出招。";
+    renderRelaxGame();
+    return;
+  }
+  const target = normalizeRelaxAnswer(relaxGameState.currentWord.word);
+  const given = normalizeRelaxAnswer(answer);
+  if (given === target) {
+    relaxGameState.score += relaxGameState.isBoss ? 26 : 12;
+    relaxGameState.enemyHp = Math.max(0, relaxGameState.enemyHp - 1);
+    relaxGameState.wordCursor += 1;
+    if (relaxGameState.enemyHp === 0) {
+      triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-clear" : "enemy-burst", relaxGameState.isBoss ? 24 : 16, "enemy", relaxGameState.isBoss ? 7 : 4);
+      playRelaxSfx(relaxGameState.isBoss ? "boss-clear" : "enemy-clear");
+      relaxGameState.defeated += 1;
+      relaxGameState.locked = true;
+      relaxGameState.heroHp = Math.min(relaxGameState.heroMaxHp, relaxGameState.heroHp + (relaxGameState.isBoss ? 18 : 6));
+      const clearedEnemy = relaxGameState.currentEnemy?.name || "敌人";
+      relaxGameState.feedback = relaxGameState.isBoss
+        ? `Boss ${clearedEnemy} 被击退了，生命恢复了一些，继续前进。`
+        : `${clearedEnemy} 被击退，继续向前。`;
+      relaxGameState.stage += 1;
+      renderRelaxGame();
+      resetRelaxAdvanceTimer();
+      relaxAdvanceTimer = setTimeout(() => {
+        if (!nodes.relaxGameModal.classList.contains("open")) return;
+        spawnRelaxStage();
+      }, 820);
+      return;
+    }
+    triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-slash" : "slash", relaxGameState.isBoss ? 14 : 10, "enemy", relaxGameState.isBoss ? 4 : 2);
+    playRelaxSfx(relaxGameState.isBoss ? "boss-hit" : "hit");
+    updateRelaxPromptForNextHit();
+    relaxGameState.feedback = `命中了 ${relaxGameState.currentEnemy?.name || "敌人"}，继续答下一题。还剩 ${relaxGameState.enemyHp} 点敌方生命。`;
+    renderRelaxGame();
+    nodes.relaxAnswerInput?.focus();
+    return;
+  }
+  triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-strike" : "hero-hit", relaxGameState.isBoss ? 18 : 12, "hero", relaxGameState.isBoss ? 6 : 4);
+  playRelaxSfx(relaxGameState.isBoss ? "boss-strike" : "hurt");
+  relaxGameState.heroHp = Math.max(0, relaxGameState.heroHp - (relaxGameState.isBoss ? 16 : 10));
+  relaxGameState.feedback = `失手了。正确答案是 ${relaxGameState.currentWord.word}，再来一题稳住节奏。`;
+  relaxGameState.wordCursor += 1;
+  if (relaxGameState.heroHp === 0) {
+    playRelaxSfx("hero-fall");
+    finishRelaxRun(`这次倒在了第 ${relaxGameState.stage} 关，最终得分 ${relaxGameState.score}。重新选择角色就能再来一轮。`);
+    return;
+  }
+  updateRelaxPromptForNextHit();
+  renderRelaxGame();
+  nodes.relaxAnswerInput?.focus();
+}
+
+function skipRelaxQuestion() {
+  if (relaxGameState.locked || !relaxGameState.heroGender || !relaxGameState.currentWord) return;
+  triggerRelaxVisualFx(relaxGameState.isBoss ? "boss-strike" : "hero-hit", relaxGameState.isBoss ? 16 : 10, "hero", relaxGameState.isBoss ? 5 : 3);
+  playRelaxSfx(relaxGameState.isBoss ? "boss-strike" : "skip");
+  relaxGameState.heroHp = Math.max(0, relaxGameState.heroHp - (relaxGameState.isBoss ? 12 : 6));
+  relaxGameState.score = Math.max(0, relaxGameState.score - 4);
+  relaxGameState.feedback = `已跳过。参考答案是 ${relaxGameState.currentWord.word}，敌人趁机反击了一下。`;
+  relaxGameState.wordCursor += 1;
+  if (relaxGameState.heroHp === 0) {
+    playRelaxSfx("hero-fall");
+    finishRelaxRun(`体力耗尽，最终停在第 ${relaxGameState.stage} 关，得分 ${relaxGameState.score}。`);
+    return;
+  }
+  updateRelaxPromptForNextHit();
+  renderRelaxGame();
+}
+
+function renderRelaxGame() {
+  if (!nodes.relaxHeroName) return;
+  const heroPercent = Math.max(0, Math.min(100, Math.round((relaxGameState.heroHp / relaxGameState.heroMaxHp) * 100)));
+  const enemyPercent = relaxGameState.enemyMaxHp ? Math.max(0, Math.min(100, Math.round((relaxGameState.enemyHp / relaxGameState.enemyMaxHp) * 100))) : 0;
+  nodes.relaxHeroName.textContent = relaxGameState.heroName;
+  nodes.relaxStageBadge.textContent = `第 ${relaxGameState.stage} 关`;
+  nodes.relaxEnemyName.textContent = relaxGameState.currentEnemy?.name || "草原守望者";
+  nodes.relaxProgressText.textContent = `${relaxGameState.defeated} 个敌人已击退`;
+  nodes.relaxScoreText.textContent = String(relaxGameState.score);
+  nodes.relaxHeroHpText.textContent = `${relaxGameState.heroHp} / ${relaxGameState.heroMaxHp}`;
+  nodes.relaxEnemyHpText.textContent = `${relaxGameState.enemyHp} / ${relaxGameState.enemyMaxHp}`;
+  nodes.relaxHeroHpBar.style.width = `${heroPercent}%`;
+  nodes.relaxEnemyHpBar.style.width = `${enemyPercent}%`;
+  nodes.relaxPromptCn.textContent = relaxGameState.currentWord ? relaxGameState.currentWord.translation : "点击左侧角色开始闯关";
+  nodes.relaxBossBadge.textContent = relaxGameState.isBoss ? "Boss 关" : "普通关";
+  nodes.relaxStageCounter.textContent = relaxGameState.active
+    ? `${relaxGameState.heroName} 正在第 ${relaxGameState.stage} 关作战${relaxGameState.isBoss ? " · Boss 来袭" : ""}`
+    : "请选择角色，准备出发。";
+  nodes.relaxFeedback.textContent = relaxGameState.feedback;
+  nodes.relaxGameSummary.textContent = relaxGameState.active
+    ? `每 10 关会出现一次 Boss。当前总分 ${relaxGameState.score}，已击退 ${relaxGameState.defeated} 个敌人。`
+    : "每次进入都会重新选择角色，然后从第 1 关开始。";
+  nodes.relaxMuteBtn.textContent = relaxGameState.muted ? "取消静音" : "静音";
+  nodes.relaxStartMaleBtn.classList.toggle("active", relaxGameState.heroGender === "male");
+  nodes.relaxStartFemaleBtn.classList.toggle("active", relaxGameState.heroGender === "female");
+  nodes.relaxAnswerInput.disabled = !relaxGameState.active || relaxGameState.locked;
+  nodes.relaxSubmitBtn.disabled = !relaxGameState.active || relaxGameState.locked;
+  nodes.relaxSkipBtn.disabled = !relaxGameState.active || relaxGameState.locked;
+  renderRelaxScene();
+}
+
+function drawRelaxPixel(ctx, x, y, w, h, color) {
+  const unit = RELAX_SCENE.pixel;
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x) * unit, Math.round(y) * unit, Math.round(w) * unit, Math.round(h) * unit);
+}
+
+function drawRelaxFinePixel(ctx, x, y, w, h, color) {
+  const unit = RELAX_SCENE.finePixel;
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x) * unit, Math.round(y) * unit, Math.round(w) * unit, Math.round(h) * unit);
+}
+
+function drawRelaxShadow(ctx, x, y, width, alpha = 0.18) {
+  drawRelaxPixel(ctx, x, y, width, 2, `rgba(34, 53, 24, ${alpha})`);
+}
+
+function drawRelaxCloud(ctx, x, y, width = 12) {
+  drawRelaxPixel(ctx, x + 2, y + 1, width - 4, 4, "rgba(124, 172, 198, .16)");
+  drawRelaxPixel(ctx, x + 3, y, width - 5, 2, "rgba(255,255,255,.54)");
+  drawRelaxPixel(ctx, x, y + 2, width - 5, 4, "rgba(255,255,255,.88)");
+  drawRelaxPixel(ctx, x + 4, y + 1, width - 2, 5, "rgba(255,255,255,.94)");
+  drawRelaxFinePixel(ctx, (x + 2) * 2, (y + 3) * 2, (width - 5) * 2, 2, "rgba(255,255,255,.24)");
+}
+
+function drawRelaxFlower(ctx, x, y, petal, center) {
+  drawRelaxFinePixel(ctx, x, y + 1, 1, 1, petal);
+  drawRelaxFinePixel(ctx, x + 2, y + 1, 1, 1, petal);
+  drawRelaxFinePixel(ctx, x + 1, y, 1, 1, petal);
+  drawRelaxFinePixel(ctx, x + 1, y + 2, 1, 1, petal);
+  drawRelaxFinePixel(ctx, x + 1, y + 1, 1, 1, center);
+}
+
+function drawRelaxDust(ctx, x, y, size = 2, color = "rgba(245, 232, 171, .55)") {
+  drawRelaxFinePixel(ctx, x, y, size, size, color);
+  drawRelaxFinePixel(ctx, x + size + 1, y + 1, 1, 1, color);
+}
+
+function drawRelaxBanner(ctx, x, y, body, edge) {
+  drawRelaxPixel(ctx, x, y, 1, 16, "#70563b");
+  drawRelaxPixel(ctx, x + 1, y + 2, 5, 3, body);
+  drawRelaxPixel(ctx, x + 1, y + 5, 4, 3, edge);
+  drawRelaxPixel(ctx, x + 1, y + 8, 3, 2, body);
+  drawRelaxFinePixel(ctx, (x + 2) * 2, (y + 3) * 2, 4, 2, "rgba(255,255,255,.22)");
+}
+
+function drawRelaxTree(ctx, x, y, crown = "#4a8346", shadow = "#325f30", trunk = "#7d5b34") {
+  drawRelaxPixel(ctx, x + 4, y + 8, 4, 10, trunk);
+  drawRelaxPixel(ctx, x + 3, y + 15, 6, 2, "#5a3e25");
+  drawRelaxPixel(ctx, x + 1, y + 6, 10, 7, shadow);
+  drawRelaxPixel(ctx, x + 2, y + 2, 8, 7, crown);
+  drawRelaxPixel(ctx, x, y + 8, 4, 5, crown);
+  drawRelaxPixel(ctx, x + 8, y + 8, 4, 5, crown);
+  drawRelaxFinePixel(ctx, (x + 4) * 2, (y + 4) * 2, 6, 4, "rgba(255,255,255,.14)");
+}
+
+function drawRelaxBush(ctx, x, y, body = "#5e9d4c", shade = "#43773d") {
+  drawRelaxPixel(ctx, x + 1, y + 2, 10, 4, body);
+  drawRelaxPixel(ctx, x, y + 4, 12, 5, shade);
+  drawRelaxPixel(ctx, x + 2, y + 1, 8, 2, "#82c567");
+}
+
+function drawRelaxTallGrass(ctx, x, y, color = "#5ba347", tip = "#9ee27b") {
+  for (let i = 0; i < 6; i += 1) {
+    const offset = i * 2;
+    drawRelaxFinePixel(ctx, x + offset, y + (i % 2), 1, 4 + (i % 3), color);
+    drawRelaxFinePixel(ctx, x + offset + 1, y + 2 + (i % 2), 1, 2, tip);
+  }
+}
+
+function drawRelaxRoutePath(ctx, x, y, width, height) {
+  drawRelaxPixel(ctx, x - 2, y, width + 4, height, "#b1844c");
+  drawRelaxPixel(ctx, x, y, width, height, "#e0c483");
+  drawRelaxPixel(ctx, x + 3, y, width - 6, height, "#efd99a");
+  for (let step = 0; step < height; step += 6) {
+    drawRelaxPixel(ctx, x + 4 + (step % 8 === 0 ? 0 : 2), y + step, Math.max(4, width - 10), 1, "rgba(197,154,84,.35)");
+  }
+}
+
+function drawRelaxGrassPatch(ctx, x, y, width, height) {
+  drawRelaxPixel(ctx, x + 2, y, width - 4, 1, "#b8ef8e");
+  drawRelaxPixel(ctx, x + 1, y + 1, width - 2, 1, "#a4df7c");
+  drawRelaxPixel(ctx, x, y + 2, width, height - 4, "#7fc85c");
+  drawRelaxPixel(ctx, x + 1, y + 3, width - 2, height - 6, "#72b852");
+  drawRelaxPixel(ctx, x + 3, y + height - 3, width - 6, 2, "#5f9b42");
+  for (let offset = 4; offset < width - 4; offset += 5) {
+    drawRelaxPixel(ctx, x + offset, y + 1 + (offset % 3), 1, 4, "#aef084");
+    drawRelaxPixel(ctx, x + offset + 1, y + 2 + (offset % 2), 1, 3, "#8bdb68");
+  }
+}
+
+function drawRelaxHero(ctx, gender, offsetY) {
+  const baseX = 24;
+  const baseY = 49 + offsetY;
+  const skin = "#efc59c";
+  drawRelaxShadow(ctx, baseX + 1, baseY + 27, 21, 0.2);
+  if (gender === "female") {
+    drawRelaxPixel(ctx, baseX + 6, baseY, 8, 2, "#6b2a24");
+    drawRelaxPixel(ctx, baseX + 5, baseY + 2, 10, 4, "#8d3a2f");
+    drawRelaxPixel(ctx, baseX + 7, baseY + 3, 6, 4, skin);
+    drawRelaxPixel(ctx, baseX + 13, baseY + 3, 2, 9, "#7e2f2a");
+    drawRelaxPixel(ctx, baseX + 5, baseY + 7, 10, 3, "#efdfc9");
+    drawRelaxPixel(ctx, baseX + 4, baseY + 9, 11, 8, "#cc5e68");
+    drawRelaxPixel(ctx, baseX + 5, baseY + 11, 9, 8, "#b34959");
+    drawRelaxPixel(ctx, baseX + 3, baseY + 9, 2, 7, skin);
+    drawRelaxPixel(ctx, baseX + 15, baseY + 9, 2, 7, skin);
+    drawRelaxPixel(ctx, baseX + 2, baseY + 10, 2, 7, "#fff0a9");
+    drawRelaxPixel(ctx, baseX + 16, baseY + 9, 5, 1, "#dce8ff");
+    drawRelaxPixel(ctx, baseX + 7, baseY + 18, 3, 8, "#3c3457");
+    drawRelaxPixel(ctx, baseX + 11, baseY + 18, 3, 8, "#3c3457");
+    drawRelaxPixel(ctx, baseX + 6, baseY + 26, 4, 2, "#151b2f");
+    drawRelaxPixel(ctx, baseX + 10, baseY + 26, 4, 2, "#151b2f");
+    drawRelaxFinePixel(ctx, (baseX + 8) * 2, (baseY + 5) * 2, 1, 1, "#312224");
+    drawRelaxFinePixel(ctx, (baseX + 11) * 2, (baseY + 5) * 2, 1, 1, "#312224");
+    drawRelaxFinePixel(ctx, (baseX + 18) * 2, (baseY + 7) * 2, 3, 1, "#eff6ff");
+    drawRelaxFinePixel(ctx, (baseX + 18) * 2, (baseY + 8) * 2, 2, 3, "#9bc7ff");
+  } else {
+    drawRelaxPixel(ctx, baseX + 6, baseY, 9, 2, "#1c2638");
+    drawRelaxPixel(ctx, baseX + 5, baseY + 2, 10, 4, skin);
+    drawRelaxPixel(ctx, baseX + 4, baseY + 6, 12, 3, "#6a95f0");
+    drawRelaxPixel(ctx, baseX + 4, baseY + 9, 12, 9, "#3f66c8");
+    drawRelaxPixel(ctx, baseX + 7, baseY + 10, 6, 4, "#bceaff");
+    drawRelaxPixel(ctx, baseX + 3, baseY + 9, 2, 8, skin);
+    drawRelaxPixel(ctx, baseX + 16, baseY + 9, 2, 8, skin);
+    drawRelaxPixel(ctx, baseX + 2, baseY + 10, 2, 8, "#2c4876");
+    drawRelaxPixel(ctx, baseX + 17, baseY + 10, 2, 8, "#2c4876");
+    drawRelaxPixel(ctx, baseX + 7, baseY + 18, 3, 9, "#26344f");
+    drawRelaxPixel(ctx, baseX + 11, baseY + 18, 3, 9, "#26344f");
+    drawRelaxPixel(ctx, baseX + 6, baseY + 27, 4, 2, "#10182b");
+    drawRelaxPixel(ctx, baseX + 10, baseY + 27, 4, 2, "#10182b");
+    drawRelaxPixel(ctx, baseX + 17, baseY + 11, 6, 2, "#d3efff");
+    drawRelaxFinePixel(ctx, (baseX + 8) * 2, (baseY + 4) * 2, 1, 1, "#1f2331");
+    drawRelaxFinePixel(ctx, (baseX + 11) * 2, (baseY + 4) * 2, 1, 1, "#1f2331");
+    drawRelaxFinePixel(ctx, (baseX + 18) * 2, (baseY + 12) * 2, 5, 2, "#94dbff");
+  }
+}
+
+function drawRelaxEnemy(ctx, profile, offsetY, blink) {
+  const isBoss = Boolean(profile?.stage && profile.stage % 10 === 0);
+  const baseX = isBoss ? 98 : 104;
+  const baseY = (isBoss ? 27 : 35) + offsetY;
+  const eye = blink ? "#223" : "#fff";
+  const auraPulse = Math.sin(relaxGameFrame / 10) > 0 ? 1 : 0;
+  drawRelaxShadow(ctx, baseX - 1, baseY + (isBoss ? 30 : 22), isBoss ? 26 : 18, 0.2);
+  switch (profile?.kind) {
+    case "slime":
+      drawRelaxPixel(ctx, baseX + 2, baseY + 6, 12, 8, "#71cc63");
+      drawRelaxPixel(ctx, baseX + 4, baseY + 3, 8, 4, "#91e07e");
+      drawRelaxPixel(ctx, baseX + 3, baseY + 14, 10, 3, "#59a94d");
+      drawRelaxPixel(ctx, baseX + 5, baseY + 9, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 10, baseY + 9, 1, 1, eye);
+      drawRelaxFinePixel(ctx, (baseX + 7) * 2, (baseY + 4) * 2, 3, 2, "rgba(255,255,255,.28)");
+      break;
+    case "rabbit":
+      drawRelaxPixel(ctx, baseX + 5, baseY - 5, 2, 8, "#d8d7de");
+      drawRelaxPixel(ctx, baseX + 12, baseY - 5, 2, 8, "#d8d7de");
+      drawRelaxPixel(ctx, baseX + 3, baseY + 1, 13, 10, "#f5f3f8");
+      drawRelaxPixel(ctx, baseX + 4, baseY + 10, 11, 5, "#d1ced7");
+      drawRelaxPixel(ctx, baseX + 7, baseY + 5, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 11, baseY + 5, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 7, baseY + 11, 5, 2, "#9a6d4a");
+      drawRelaxFinePixel(ctx, (baseX + 8) * 2, (baseY + 3) * 2, 4, 2, "rgba(255,255,255,.34)");
+      break;
+    case "boar":
+      drawRelaxPixel(ctx, baseX + 1, baseY + 6, 18, 9, "#8d5b36");
+      drawRelaxPixel(ctx, baseX + 3, baseY + 2, 13, 5, "#6f4326");
+      drawRelaxPixel(ctx, baseX + 10, baseY + 7, 2, 1, eye);
+      drawRelaxPixel(ctx, baseX + 16, baseY + 6, 3, 2, "#f4eadc");
+      drawRelaxPixel(ctx, baseX + 4, baseY + 14, 2, 5, "#533018");
+      drawRelaxPixel(ctx, baseX + 12, baseY + 14, 2, 5, "#533018");
+      drawRelaxFinePixel(ctx, (baseX + 5) * 2, (baseY + 4) * 2, 6, 2, "rgba(255,220,188,.12)");
+      break;
+    case "crow":
+      drawRelaxPixel(ctx, baseX + 5, baseY + 4, 10, 8, "#30354d");
+      drawRelaxPixel(ctx, baseX, baseY + 7, 6, 4, "#1b2137");
+      drawRelaxPixel(ctx, baseX + 14, baseY + 7, 6, 4, "#1b2137");
+      drawRelaxPixel(ctx, baseX + 8, baseY + 6, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 13, baseY + 8, 5, 1, "#f7b647");
+      drawRelaxFinePixel(ctx, (baseX + 3) * 2, (baseY + 9) * 2, 3, 2, "#576182");
+      break;
+    case "cactus":
+      drawRelaxPixel(ctx, baseX + 6, baseY, 7, 15, "#53a24c");
+      drawRelaxPixel(ctx, baseX + 2, baseY + 5, 4, 7, "#53a24c");
+      drawRelaxPixel(ctx, baseX + 13, baseY + 7, 4, 7, "#53a24c");
+      drawRelaxPixel(ctx, baseX + 7, baseY + 4, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 10, baseY + 4, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 7, baseY + 10, 5, 2, "#3b7c39");
+      drawRelaxFinePixel(ctx, (baseX + 5) * 2, (baseY + 2) * 2, 1, 1, "#ffd66d");
+      drawRelaxFinePixel(ctx, (baseX + 12) * 2, (baseY + 3) * 2, 1, 1, "#ffd66d");
+      break;
+    case "mushroom":
+      drawRelaxPixel(ctx, baseX + 1, baseY + 2, 16, 6, "#d95b5b");
+      drawRelaxPixel(ctx, baseX + 3, baseY + 8, 11, 9, "#f3e7d2");
+      drawRelaxPixel(ctx, baseX + 6, baseY + 10, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 10, baseY + 10, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 6, baseY + 3, 2, 2, "#fff1f0");
+      drawRelaxPixel(ctx, baseX + 11, baseY + 3, 2, 2, "#fff1f0");
+      drawRelaxPixel(ctx, baseX + 5, baseY + 15, 7, 2, "#d4c6ab");
+      break;
+    case "buffalo":
+      drawRelaxPixel(ctx, baseX, baseY + 7, 24, 13, "#6b4f31");
+      drawRelaxPixel(ctx, baseX + 3, baseY + 1, 17, 7, "#83613c");
+      drawRelaxPixel(ctx, baseX - 2, baseY + 2, 5, 2, auraPulse ? "#fff0df" : "#f4e7d7");
+      drawRelaxPixel(ctx, baseX + 21, baseY + 2, 5, 2, auraPulse ? "#fff0df" : "#f4e7d7");
+      drawRelaxPixel(ctx, baseX + 15, baseY + 10, 2, 1, eye);
+      drawRelaxPixel(ctx, baseX + 3, baseY + 20, 3, 6, "#4e361f");
+      drawRelaxPixel(ctx, baseX + 17, baseY + 20, 3, 6, "#4e361f");
+      drawRelaxFinePixel(ctx, (baseX + 6) * 2, (baseY + 4) * 2, 8, 2, "rgba(255,230,198,.12)");
+      break;
+    case "golem":
+      drawRelaxPixel(ctx, baseX + 2, baseY + 1, 18, 15, "#7e858d");
+      drawRelaxPixel(ctx, baseX + 5, baseY - 2, 12, 5, "#959da5");
+      drawRelaxPixel(ctx, baseX + 7, baseY + 6, 2, 1, "#8bd7ff");
+      drawRelaxPixel(ctx, baseX + 13, baseY + 6, 2, 1, "#8bd7ff");
+      drawRelaxPixel(ctx, baseX + 2, baseY + 12, 3, 8, "#646b73");
+      drawRelaxPixel(ctx, baseX + 16, baseY + 12, 3, 8, "#646b73");
+      drawRelaxFinePixel(ctx, (baseX + 5) * 2, (baseY + 8) * 2, 10, 2, "rgba(255,255,255,.1)");
+      break;
+    case "lion":
+      drawRelaxPixel(ctx, baseX + 2, baseY + 5, 18, 12, "#e09d43");
+      drawRelaxPixel(ctx, baseX + 5, baseY - 2, 12, 8, "#7d4b22");
+      drawRelaxPixel(ctx, baseX + 12, baseY + 7, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 17, baseY + 9, 4, 2, "#b86424");
+      drawRelaxFinePixel(ctx, (baseX + 7) * 2, (baseY + 3) * 2, 7, 2, "#b66d2b");
+      break;
+    case "hawk":
+      drawRelaxPixel(ctx, baseX + 5, baseY + 4, 11, 8, "#596088");
+      drawRelaxPixel(ctx, baseX, baseY + 7, 7, 4, "#404b70");
+      drawRelaxPixel(ctx, baseX + 15, baseY + 7, 7, 4, "#404b70");
+      drawRelaxPixel(ctx, baseX + 10, baseY + 5, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 15, baseY + 8, 4, 1, "#f4c654");
+      drawRelaxFinePixel(ctx, (baseX + 6) * 2, (baseY + 10) * 2, 8, 2, "#8790b5");
+      break;
+    case "dragon":
+      drawRelaxPixel(ctx, baseX + 1, baseY + 4, 22, 12, "#5a9472");
+      drawRelaxPixel(ctx, baseX + 7, baseY - 1, 12, 7, "#84b96f");
+      drawRelaxPixel(ctx, baseX + 18, baseY + 8, 5, 5, auraPulse ? "#d35e49" : "#b84c3b");
+      drawRelaxPixel(ctx, baseX + 13, baseY + 7, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 4, baseY + 16, 4, 6, "#487658");
+      drawRelaxPixel(ctx, baseX + 15, baseY + 16, 4, 6, "#487658");
+      drawRelaxFinePixel(ctx, (baseX + 10) * 2, (baseY + 2) * 2, 8, 2, "#a8d784");
+      break;
+    default:
+      drawRelaxPixel(ctx, baseX + 2, baseY + 4, 14, 10, "#73c658");
+      drawRelaxPixel(ctx, baseX + 6, baseY + 7, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 10, baseY + 7, 1, 1, eye);
+      drawRelaxPixel(ctx, baseX + 6, baseY + 12, 5, 1, "#4c8f36");
+  }
+  if (isBoss) {
+    drawRelaxPixel(ctx, baseX - 3, baseY - 3, 28, 1, "rgba(255, 205, 88, .18)");
+    drawRelaxPixel(ctx, baseX, baseY + 22, 22, 1, "rgba(255,255,255,.08)");
+  }
+}
+
+function drawRelaxFlashRect(ctx, x, y, w, h, color, alpha) {
+  if (alpha <= 0) return;
+  drawRelaxPixel(ctx, x, y, w, h, color.replace("ALPHA", String(alpha)));
+}
+
+function drawRelaxCombatFx(ctx) {
+  if (!relaxGameState.fxType || relaxGameState.fxFrame <= 0) return;
+  const progress = 1 - relaxGameState.fxFrame / Math.max(1, relaxGameState.fxMax);
+  const flash = Math.max(0.1, relaxGameState.fxFrame / Math.max(1, relaxGameState.fxMax));
+  switch (relaxGameState.fxType) {
+    case "spawn":
+      for (let i = 0; i < 5; i += 1) {
+        drawRelaxFinePixel(ctx, 210 + i * 10, 112 - Math.round(progress * 8) * 2, 2, 2, "rgba(255,255,255,.58)");
+        drawRelaxFinePixel(ctx, 214 + i * 10, 116 + Math.round(progress * 5) * 2, 1, 1, "rgba(255,245,188,.72)");
+      }
+      break;
+    case "slash":
+    case "boss-slash":
+      for (let i = 0; i < (relaxGameState.fxType === "boss-slash" ? 7 : 5); i += 1) {
+        drawRelaxPixel(ctx, 56 + i * 8, 60 - i * 2, 4, 1, "rgba(226,245,255,.92)");
+        drawRelaxPixel(ctx, 58 + i * 8, 61 - i * 2, 5, 1, "rgba(138,214,255,.78)");
+      }
+      drawRelaxPixel(ctx, 112, 45, relaxGameState.fxType === "boss-slash" ? 7 : 5, 4, `rgba(255,243,153,${0.25 + flash * 0.5})`);
+      break;
+    case "enemy-burst":
+    case "boss-clear":
+      for (const [dx, dy] of [[0, -8], [0, 8], [-10, 0], [10, 0], [-7, -6], [7, -6], [-7, 6], [7, 6]]) {
+        drawRelaxPixel(ctx, 117 + dx, 48 + dy, relaxGameState.fxType === "boss-clear" ? 3 : 2, relaxGameState.fxType === "boss-clear" ? 3 : 2, "rgba(255,236,124,.88)");
+      }
+      if (relaxGameState.fxType === "boss-clear") {
+        drawRelaxPixel(ctx, 98, 28, 32, 2, `rgba(255,255,255,${0.18 + flash * 0.35})`);
+        drawRelaxPixel(ctx, 104, 58, 20, 2, `rgba(255,208,92,${0.18 + flash * 0.45})`);
+      }
+      break;
+    case "hero-hit":
+    case "boss-strike":
+      for (const [dx, dy] of [[0, -6], [0, 6], [-6, 0], [6, 0], [-5, -5], [5, -5]]) {
+        drawRelaxPixel(ctx, 40 + dx, 64 + dy, 2, 2, `rgba(255,118,104,${0.24 + flash * 0.45})`);
+      }
+      if (relaxGameState.fxType === "boss-strike") {
+        drawRelaxPixel(ctx, 28, 57, 14, 1, "rgba(255,175,64,.72)");
+        drawRelaxPixel(ctx, 30, 59, 12, 1, "rgba(255,223,128,.82)");
+      }
+      break;
+    case "boss-intro":
+      drawRelaxPixel(ctx, 0, 0, 160, 8, `rgba(22,28,44,${0.3 + flash * 0.3})`);
+      drawRelaxPixel(ctx, 0, 82, 160, 8, `rgba(22,28,44,${0.3 + flash * 0.3})`);
+      drawRelaxPixel(ctx, 98, 24, 36, 2, `rgba(255,214,112,${0.15 + flash * 0.4})`);
+      drawRelaxPixel(ctx, 103, 29, 26, 2, `rgba(255,255,255,${0.1 + flash * 0.35})`);
+      break;
+  }
+}
+
+function renderRelaxScene() {
+  if (!nodes.relaxGameCanvas) return;
+  const ctx = nodes.relaxGameCanvas.getContext("2d");
+  nodes.relaxGameCanvas.width = RELAX_SCENE.canvasWidth;
+  nodes.relaxGameCanvas.height = RELAX_SCENE.canvasHeight;
+  ctx.clearRect(0, 0, RELAX_SCENE.canvasWidth, RELAX_SCENE.canvasHeight);
+  ctx.imageSmoothingEnabled = false;
+  const shake = relaxGameState.screenShake > 0
+    ? ((relaxGameFrame % 2 === 0 ? 1 : -1) * Math.min(2, relaxGameState.screenShake))
+    : 0;
+  ctx.save();
+  ctx.translate(shake * RELAX_SCENE.pixel, 0);
+  const skyShift = Math.sin(relaxGameFrame / 90) * 0.8;
+  const cloudDrift = Math.sin(relaxGameFrame / 40) * 2;
+  const bob = Math.sin(relaxGameFrame / 18) * 1.6;
+  drawRelaxPixel(ctx, 0, 0, 160, 14, "#92dcff");
+  drawRelaxPixel(ctx, 0, 14, 160, 10, "#a6e5ff");
+  drawRelaxPixel(ctx, 0, 24, 160, 12, "#bfefff");
+  drawRelaxPixel(ctx, 0, 36, 160, 8, "#a7d8a4");
+  drawRelaxPixel(ctx, 0, 44, 160, 10, "#8dc785");
+  drawRelaxPixel(ctx, 0, 54, 160, 9, "#6dad66");
+  drawRelaxPixel(ctx, 0, 63, 160, 27, "#87d36b");
+  drawRelaxPixel(ctx, 7, 7, 10, 10, "#ffe17b");
+  drawRelaxPixel(ctx, 9, 9, 6, 6, "#fff4c2");
+  drawRelaxCloud(ctx, 16 + cloudDrift, 9 + skyShift, 14);
+  drawRelaxCloud(ctx, 60 - cloudDrift * 0.25, 7, 10);
+  drawRelaxCloud(ctx, 118 - cloudDrift * 0.45, 12, 12);
+  drawRelaxPixel(ctx, 0, 30, 24, 16, "#5f8d56");
+  drawRelaxPixel(ctx, 18, 28, 24, 18, "#6a995f");
+  drawRelaxPixel(ctx, 40, 32, 20, 14, "#5f8f55");
+  drawRelaxPixel(ctx, 102, 30, 20, 15, "#5c8a52");
+  drawRelaxPixel(ctx, 122, 34, 18, 12, "#6e9c61");
+  drawRelaxPixel(ctx, 138, 37, 22, 10, "#5f8d56");
+  drawRelaxPixel(ctx, 0, 47, 160, 3, "#467647");
+  drawRelaxPixel(ctx, 0, 50, 160, 4, "#68ae59");
+  drawRelaxPixel(ctx, 0, 54, 160, 2, "#5a964c");
+  drawRelaxRoutePath(ctx, 67, 25, 25, 56);
+  drawRelaxPixel(ctx, 63, 23, 2, 58, "#7bac56");
+  drawRelaxPixel(ctx, 94, 23, 2, 58, "#7bac56");
+  drawRelaxGrassPatch(ctx, 17, 68, 36, 10);
+  drawRelaxGrassPatch(ctx, 101, 43, 30, 9);
+  for (const tree of [
+    [2, 34], [13, 33], [25, 35], [36, 34],
+    [112, 33], [124, 34], [136, 35], [147, 36]
+  ]) {
+    drawRelaxTree(ctx, tree[0], tree[1]);
+  }
+  for (const bush of [[52, 57], [100, 58], [10, 61], [136, 61]]) {
+    drawRelaxBush(ctx, bush[0], bush[1]);
+  }
+  for (const grass of [
+    [14, 128], [28, 124], [46, 130], [58, 125],
+    [204, 112], [224, 118], [244, 115], [270, 120]
+  ]) {
+    drawRelaxTallGrass(ctx, grass[0], grass[1]);
+  }
+  drawRelaxBanner(ctx, 58, 44, "#e7f0b4", "#9caf66");
+  drawRelaxBanner(ctx, 96, 43, "#b6dff2", "#6aa0b8");
+  drawRelaxPixel(ctx, 0, 78, 160, 12, "#95de74");
+  for (const tuft of [6, 12, 18, 25, 34, 42, 52, 63, 74, 84, 96, 108, 121, 133, 145, 154]) {
+    const sway = Math.sin(relaxGameFrame / 22 + tuft / 8) > 0 ? 1 : 0;
+    drawRelaxPixel(ctx, tuft, 74 - sway, 1, 7 + sway, "#79c95d");
+    drawRelaxPixel(ctx, tuft + 1, 77, 1, 4, "#a8ef84");
+  }
+  for (const flower of [
+    [30, 164, "#ffb6c9", "#ffeb7a"],
+    [56, 168, "#c8b8ff", "#fff2a1"],
+    [116, 162, "#ffd3a4", "#fff0a6"],
+    [144, 168, "#a8f1ff", "#fff4ae"]
+  ]) {
+    drawRelaxFlower(ctx, flower[0], flower[1], flower[2], flower[3]);
+  }
+  for (const dust of [
+    [48 + bob, 151],
+    [144 - bob, 131],
+    [164 + skyShift, 146],
+    [244, 136]
+  ]) {
+    drawRelaxDust(ctx, dust[0], dust[1]);
+  }
+  drawRelaxHero(ctx, relaxGameState.heroGender || "male", bob);
+  drawRelaxEnemy(ctx, relaxGameState.currentEnemy, -bob, Math.floor(relaxGameFrame / 24) % 6 === 0);
+  if (relaxGameState.enemyFlash > 0) {
+    drawRelaxPixel(ctx, 100, 28, 28, 24, `rgba(255,255,255,${Math.min(.24, relaxGameState.enemyFlash / 48)})`);
+  }
+  if (relaxGameState.heroFlash > 0) {
+    drawRelaxPixel(ctx, 26, 50, 22, 26, `rgba(255,134,122,${Math.min(.22, relaxGameState.heroFlash / 44)})`);
+  }
+  drawRelaxCombatFx(ctx);
+  if (relaxGameState.heroHp <= 35) {
+    drawRelaxPixel(ctx, 0, 0, 160, 90, "rgba(86, 24, 24, 0.08)");
+  }
+  drawRelaxPixel(ctx, 18, 82, 12, 3, "#84c85d");
+  drawRelaxPixel(ctx, 50, 83, 14, 3, "#84c85d");
+  drawRelaxPixel(ctx, 108, 82, 15, 3, "#84c85d");
+  drawRelaxPixel(ctx, 135, 85, 9, 2, "#93d96a");
+  ctx.restore();
+}
+
+function relaxGameTick() {
+  if (!nodes.relaxGameModal?.classList.contains("open")) return;
+  relaxGameFrame += 1;
+  renderRelaxScene();
+  relaxGameAnimationId = requestAnimationFrame(relaxGameTick);
+}
+
+function startRelaxSceneLoop() {
+  if (relaxGameAnimationId) cancelAnimationFrame(relaxGameAnimationId);
+  relaxGameAnimationId = requestAnimationFrame(relaxGameTick);
+}
+
+function stopRelaxSceneLoop() {
+  if (relaxGameAnimationId) cancelAnimationFrame(relaxGameAnimationId);
+  relaxGameAnimationId = 0;
+}
+
+function midiToFrequency(midi) {
+  return 440 * 2 ** ((midi - 69) / 12);
+}
+
+async function ensureRelaxAudioContext() {
+  if (!relaxAudioContext) {
+    const AudioContextCtor = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!AudioContextCtor) return null;
+    relaxAudioContext = new AudioContextCtor();
+  }
+  if (relaxAudioContext.state === "suspended") {
+    await relaxAudioContext.resume();
+  }
+  return relaxAudioContext;
+}
+
+function playRelaxTone(midi, duration = 0.18, volume = 0.03, type = "square") {
+  if (relaxGameState.muted || !relaxAudioContext || midi === null) return;
+  const osc = relaxAudioContext.createOscillator();
+  const gain = relaxAudioContext.createGain();
+  osc.type = type;
+  osc.frequency.value = midiToFrequency(midi);
+  gain.gain.setValueAtTime(0.0001, relaxAudioContext.currentTime);
+  gain.gain.linearRampToValueAtTime(volume, relaxAudioContext.currentTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, relaxAudioContext.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(relaxAudioContext.destination);
+  osc.start();
+  osc.stop(relaxAudioContext.currentTime + duration);
+}
+
+function playRelaxChord(notes, duration = 0.18, volume = 0.03, waveTypes = ["square", "triangle"]) {
+  notes.forEach((midi, index) => playRelaxTone(midi, duration, Math.max(0.012, volume - index * 0.005), waveTypes[index % waveTypes.length]));
+}
+
+async function startRelaxMusic() {
+  const ctx = await ensureRelaxAudioContext();
+  if (!ctx || relaxMusicTimer || relaxGameState.muted) return;
+  let step = 0;
+  relaxMusicTimer = setInterval(() => {
+    if (!nodes.relaxGameModal?.classList.contains("open") || relaxGameState.muted) return;
+    const isBoss = relaxGameState.isBoss;
+    const melody = isBoss ? relaxBossMelody : relaxMelody;
+    const midi = melody[step % melody.length];
+    playRelaxTone(midi, isBoss ? 0.19 : 0.16, isBoss ? 0.03 : 0.026, isBoss ? "sawtooth" : "square");
+    playRelaxTone(midi - 12, 0.12, isBoss ? 0.018 : 0.012, "triangle");
+    if (isBoss && step % 2 === 0) playRelaxTone(midi - 19, 0.08, 0.014, "square");
+    if (!isBoss && step % 4 === 0) playRelaxTone(midi + 7, 0.07, 0.01, "triangle");
+    step += 1;
+  }, 210);
+}
+
+function stopRelaxMusic() {
+  if (relaxMusicTimer) {
+    clearInterval(relaxMusicTimer);
+    relaxMusicTimer = null;
+  }
+}
+
+function playRelaxSfx(type) {
+  ensureRelaxAudioContext().then(() => {
+    if (relaxGameState.muted) return;
+    switch (type) {
+      case "hit":
+        playRelaxChord([76, 83], 0.08, 0.042, ["square", "triangle"]);
+        break;
+      case "enemy-clear":
+        playRelaxChord([72, 76, 81], 0.16, 0.034, ["square", "triangle", "sine"]);
+        break;
+      case "boss-hit":
+        playRelaxChord([48, 55, 62], 0.14, 0.044, ["sawtooth", "square", "triangle"]);
+        playRelaxTone(69, 0.07, 0.02, "triangle");
+        break;
+      case "boss-clear":
+        playRelaxChord([50, 57, 62, 69], 0.28, 0.04, ["square", "triangle", "sawtooth", "sine"]);
+        playRelaxTone(74, 0.12, 0.022, "triangle");
+        break;
+      case "boss-strike":
+        playRelaxChord([43, 39], 0.18, 0.045, ["sawtooth", "square"]);
+        break;
+      case "hero-fall":
+        playRelaxChord([52, 47, 40], 0.26, 0.038, ["triangle", "sawtooth", "square"]);
+        break;
+      case "skip":
+        playRelaxTone(58, 0.07, 0.022, "square");
+        playRelaxTone(54, 0.09, 0.018, "triangle");
+        break;
+      default:
+        playRelaxChord([52, 45], 0.12, 0.04, ["sawtooth", "square"]);
+    }
+  });
+}
+
+function toggleRelaxMute() {
+  relaxGameState.muted = !relaxGameState.muted;
+  if (relaxGameState.muted) stopRelaxMusic();
+  else if (nodes.relaxGameModal?.classList.contains("open")) startRelaxMusic();
+  renderRelaxGame();
+}
+
 function renderPomodoroSubjects() {
   nodes.pomodoroSubject.innerHTML = "";
   state.books.forEach((book) => {
@@ -2675,20 +3612,77 @@ nodes.dictionaryNextBtn?.addEventListener("click", () => {
   renderDictionary();
 });
 nodes.importDictionaryBtn.addEventListener("click", () => nodes.dictionaryImportInput.click());
-nodes.dictionaryImportInput.addEventListener("change", () => importDictionaryFile(nodes.dictionaryImportInput.files?.[0]));
+nodes.dictionaryImportInput.addEventListener("change", () =>
+  importDictionaryFile(nodes.dictionaryImportInput.files?.[0], {
+    merge: mergeDictionary,
+    statusNode: nodes.dictionaryStatus,
+    render: renderDictionary,
+    inputNode: nodes.dictionaryImportInput,
+    afterImport: setupGame
+  })
+);
+nodes.cet4DictionarySearchInput?.addEventListener("input", () => {
+  cet4DictionaryPage = 1;
+  renderCet4Dictionary();
+});
+nodes.cet4DictionaryPageSize?.addEventListener("change", () => {
+  cet4DictionaryPageSize =
+    nodes.cet4DictionaryPageSize.value === "all" ? "all" : Number(nodes.cet4DictionaryPageSize.value) || 48;
+  cet4DictionaryPage = 1;
+  renderCet4Dictionary();
+});
+nodes.cet4DictionaryPrevBtn?.addEventListener("click", () => {
+  cet4DictionaryPage = Math.max(1, cet4DictionaryPage - 1);
+  renderCet4Dictionary();
+});
+nodes.cet4DictionaryNextBtn?.addEventListener("click", () => {
+  cet4DictionaryPage += 1;
+  renderCet4Dictionary();
+});
+nodes.importCet4DictionaryBtn?.addEventListener("click", () => nodes.cet4DictionaryImportInput?.click());
+nodes.cet4DictionaryImportInput?.addEventListener("change", () =>
+  importDictionaryFile(nodes.cet4DictionaryImportInput.files?.[0], {
+    merge: mergeCet4Dictionary,
+    statusNode: nodes.cet4DictionaryStatus,
+    render: renderCet4Dictionary,
+    inputNode: nodes.cet4DictionaryImportInput
+  })
+);
 nodes.dataBackupBtn.addEventListener("click", () => openModal(nodes.backupModal));
 nodes.exportDataBtn.addEventListener("click", exportAllData);
 nodes.importDataBtn.addEventListener("click", () => nodes.importDataInput.click());
 nodes.compactDataBtn.addEventListener("click", compactMistakeImages);
 nodes.importDataInput.addEventListener("change", () => importAllData(nodes.importDataInput.files?.[0]));
 nodes.notesBtn.addEventListener("click", () => openModal(nodes.notesModal));
+nodes.utilityNotesBtn?.addEventListener("click", () => openModal(nodes.notesModal));
 nodes.gameBtn.addEventListener("click", () => {
   setupGame();
   openModal(nodes.gameModal);
 });
+nodes.relaxGameBtn?.addEventListener("click", () => {
+  resetRelaxGameLobby();
+  openModal(nodes.relaxGameModal);
+});
+nodes.utilityRelaxBtn?.addEventListener("click", () => {
+  resetRelaxGameLobby();
+  openModal(nodes.relaxGameModal);
+});
 nodes.restartGameBtn.addEventListener("click", setupGame);
 nodes.submitGameBtn.addEventListener("click", submitGameAnswer);
 nodes.nextGameBtn.addEventListener("click", advanceGame);
+nodes.relaxStartMaleBtn?.addEventListener("click", () => startRelaxGame("male"));
+nodes.relaxStartFemaleBtn?.addEventListener("click", () => startRelaxGame("female"));
+nodes.relaxSubmitBtn?.addEventListener("click", submitRelaxGameAnswer);
+nodes.relaxSkipBtn?.addEventListener("click", skipRelaxQuestion);
+nodes.relaxResetBtn?.addEventListener("click", resetRelaxGameLobby);
+nodes.relaxMuteBtn?.addEventListener("click", toggleRelaxMute);
+nodes.relaxAnswerInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    submitRelaxGameAnswer();
+  }
+});
+nodes.scrollTopBtn?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 nodes.pomodoroBtn.addEventListener("click", () => {
   renderPomodoroSubjects();
   setPomodoroDuration();
@@ -2721,6 +3715,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeModal(nodes.notesModal);
     closeModal(nodes.gameModal);
+    closeModal(nodes.relaxGameModal);
     closeModal(nodes.pomodoroModal);
     closeModal(nodes.reviewModal);
     closeModal(nodes.backupModal);
@@ -2730,6 +3725,7 @@ document.addEventListener("keydown", (event) => {
 
 setupNote();
 setupGame();
+resetRelaxGameLobby();
 setPomodoroDuration();
 setupEntryThemes();
 setupFeatureNavigation();
