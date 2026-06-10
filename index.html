@@ -51,6 +51,18 @@
                 <strong>教材库与计划</strong>
                 <span>添加教材、设置年份、编辑章节、生成复习方法。</span>
               </button>
+              <button class="feature-btn" type="button" data-feature-target="dashboardPanel">
+                <strong>学习看板与积分</strong>
+                <span>考试倒计时、冲刺提醒、学习数据、成就分数。</span>
+              </button>
+              <button class="feature-btn" type="button" data-feature-target="mistakePanel">
+                <strong>图片错题集</strong>
+                <span>上传错题图片，按日期、科目和星级整理。</span>
+              </button>
+              <button class="feature-btn" id="dataBackupBtn" type="button">
+                <strong>数据备份 / 导入</strong>
+                <span>导出全部本地数据，换设备或更新前都能先保存。</span>
+              </button>
             </article>
 
             <article class="feature-group">
@@ -62,6 +74,10 @@
               <button class="feature-btn" id="gameBtn" type="button">
                 <strong>六级小游戏</strong>
                 <span>词汇配对、翻译、续写评分，每次打开换题。</span>
+              </button>
+              <button class="feature-btn" type="button" data-feature-target="dictionaryPanel">
+                <strong>六级词典</strong>
+                <span>搜索词汇和词组，也支持导入完整词库。</span>
               </button>
             </article>
 
@@ -88,6 +104,7 @@
                 <span>勾选任务、切换月/年热力图、导出今日或周报图片。</span>
               </button>
             </article>
+
           </div>
         </section>
 
@@ -188,9 +205,12 @@
 
         <section class="feature-panel" id="englishPanel" aria-label="每日英文">
           <article class="daily-english" id="dailyEnglish">
-            <div>
-              <p class="kicker">每日英文短篇</p>
-              <h2 id="dailyEnglishTitle">A Quiet Hour Before Sunrise</h2>
+            <div class="english-head">
+              <div>
+                <p class="kicker">每日英文短篇</p>
+                <h2 id="dailyEnglishTitle">A Quiet Hour Before Sunrise</h2>
+              </div>
+              <button class="ghost-light-btn" id="favoriteEnglishBtn" type="button">收藏今日短篇</button>
             </div>
             <p class="english-text" id="dailyEnglishText">Before sunrise, Lin opened her notebook and wrote down three small goals for the day. She knew that motivation would not always arrive on time, so she built a routine that could carry her forward when her mood was uncertain. For the first twenty minutes, she reviewed yesterday's mistakes without checking the answers. Then she read one short passage aloud, marking useful phrases in blue. By the time the city became noisy, her mind had already entered a steady rhythm. Progress, she realized, was not a sudden gift but a quiet result of returning to the desk again and again.</p>
             <p class="translation" id="dailyEnglishTranslation">日出前，林打开笔记本，写下当天的三个小目标。她知道动力并不总会准时出现，所以建立了一套习惯，让自己在状态不稳定时也能继续前进。前二十分钟，她不看答案，先复盘昨天的错误。接着，她朗读一篇短文，并用蓝色标出有用表达。等城市渐渐喧闹起来时，她的思绪已经进入稳定节奏。她意识到，进步不是突然降临的礼物，而是一次又一次回到书桌前所产生的安静结果。</p>
@@ -206,6 +226,141 @@
               </div>
             </details>
           </article>
+          <section class="english-favorites">
+            <div class="section-head">
+              <div>
+                <p class="kicker">收藏夹</p>
+                <h2>已收藏英文短篇</h2>
+              </div>
+            </div>
+            <div class="favorite-list" id="favoriteEnglishList"></div>
+          </section>
+        </section>
+
+        <section class="feature-panel" id="dictionaryPanel" aria-label="六级词典">
+          <section class="dictionary-panel">
+            <div class="section-head">
+              <div>
+                <p class="kicker">CET-6 Dictionary</p>
+                <h2>六级词典</h2>
+              </div>
+              <div class="dictionary-actions">
+                <button class="ghost-light-btn" id="importDictionaryBtn" type="button">导入词库文件</button>
+                <input id="dictionaryImportInput" type="file" accept="application/json,.json" hidden />
+              </div>
+            </div>
+            <div class="dictionary-search">
+              <input id="dictionarySearchInput" type="search" placeholder="搜索英文、中文释义或词组" />
+              <div class="dictionary-stats" id="dictionaryStats"></div>
+            </div>
+            <div class="dictionary-toolbar">
+              <label class="dictionary-page-size" for="dictionaryPageSize">
+                每页显示
+                <select id="dictionaryPageSize">
+                  <option value="24">24</option>
+                  <option value="48" selected>48</option>
+                  <option value="96">96</option>
+                  <option value="200">200</option>
+                  <option value="all">全部</option>
+                </select>
+              </label>
+              <div class="dictionary-pagination">
+                <button class="ghost-light-btn" id="dictionaryPrevBtn" type="button">上一页</button>
+                <span id="dictionaryPageInfo">第 1 / 1 页</span>
+                <button class="ghost-light-btn" id="dictionaryNextBtn" type="button">下一页</button>
+              </div>
+            </div>
+            <div class="quick-add-status" id="dictionaryStatus">已内置 5523 个六级单词，支持搜索；词组区留作后续导入。</div>
+            <div class="dictionary-results" id="dictionaryResults"></div>
+          </section>
+        </section>
+
+        <section class="feature-panel" id="mistakePanel" aria-label="图片错题集">
+          <div class="mistake-layout">
+            <section class="mistake-editor">
+              <div class="section-head">
+                <div>
+                  <p class="kicker">图片错题集</p>
+                  <h2>添加错题图片</h2>
+                </div>
+              </div>
+              <form id="mistakeForm" class="mistake-form">
+                <label>
+                  日期
+                  <input id="mistakeDate" type="date" required />
+                </label>
+                <label>
+                  科目
+                  <select id="mistakeSubject" required></select>
+                </label>
+                <label>
+                  星级
+                  <div class="star-picker" id="mistakeStars" aria-label="错题星级"></div>
+                </label>
+                <label class="wide">
+                  错题图片
+                  <input id="mistakeImageInput" type="file" accept="image/*" capture="environment" required />
+                </label>
+                <label class="wide">
+                  错因 / 提醒
+                  <textarea id="mistakeNote" rows="3" placeholder="例如：审题漏条件、公式混淆、计算失误、下次先看定义..."></textarea>
+                </label>
+                <div class="mistake-preview wide" id="mistakePreview">选择图片后会显示预览。</div>
+                <button class="primary-btn wide" type="submit">保存错题</button>
+              </form>
+              <div class="quick-add-status" id="mistakeStatus">建议只拍关键题干、过程或错因，不必把整页都拍进去。</div>
+            </section>
+
+            <section class="mistake-library">
+              <div class="section-head">
+                <div>
+                  <p class="kicker">复习筛选</p>
+                  <h2>我的错题图片</h2>
+                </div>
+              </div>
+              <div class="mistake-filters">
+                <label>
+                  日期
+                  <input id="mistakeFilterDate" type="date" />
+                </label>
+                <label>
+                  科目
+                  <select id="mistakeFilterSubject"></select>
+                </label>
+              </div>
+              <div class="mistake-list" id="mistakeList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="feature-panel" id="dashboardPanel" aria-label="学习看板与积分">
+          <div class="dashboard-grid">
+            <article class="dashboard-card score-card">
+              <p class="kicker">成就分数</p>
+              <div class="score-number" id="scoreTotal">0</div>
+              <div class="score-rank" id="scoreRank">新手学习者</div>
+              <div class="score-progress"><span id="scoreProgress"></span></div>
+              <div class="badge-list" id="achievementBadges"></div>
+            </article>
+
+            <article class="dashboard-card">
+              <p class="kicker">考试倒计时</p>
+              <h2>冲刺模式</h2>
+              <div class="countdown-list" id="examCountdownList"></div>
+            </article>
+
+            <article class="dashboard-card">
+              <p class="kicker">本周数据</p>
+              <h2>学习数据看板</h2>
+              <div class="dashboard-stats" id="dashboardStats"></div>
+            </article>
+
+            <article class="dashboard-card">
+              <p class="kicker">科目分布</p>
+              <h2>最近学习重心</h2>
+              <div class="subject-bars" id="dashboardSubjects"></div>
+            </article>
+          </div>
         </section>
 
         <section class="feature-panel" id="recordPanel" aria-label="计划记录与导出">
@@ -414,6 +569,39 @@
       </section>
     </div>
 
+    <div class="modal-layer" id="backupModal" aria-hidden="true">
+      <section class="modal-card backup-modal" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">数据安全</p>
+            <h2 id="backupTitle">备份与导入</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="backupModal">×</button>
+        </div>
+        <div class="backup-actions">
+          <button class="primary-btn" id="exportDataBtn" type="button">一键导出全部数据</button>
+          <button class="ghost-light-btn" id="importDataBtn" type="button">导入备份文件</button>
+          <button class="ghost-light-btn" id="compactDataBtn" type="button">一键数据瘦身</button>
+          <input id="importDataInput" type="file" accept="application/json,.json" hidden />
+        </div>
+        <p class="backup-note">导入会覆盖当前浏览器里的教材、任务、记事本、复盘、英文收藏、错题图片和主题设置。数据瘦身会重新压缩错题图片，建议先导出备份。</p>
+        <div class="quick-add-status" id="backupStatus">还没有进行备份操作。</div>
+      </section>
+    </div>
+
+    <div class="modal-layer" id="todayReminderModal" aria-hidden="true">
+      <section class="modal-card today-modal" role="dialog" aria-modal="true" aria-labelledby="todayReminderTitle">
+        <div class="modal-head">
+          <div>
+            <p class="kicker">今日提醒</p>
+            <h2 id="todayReminderTitle">今天先抓住这几件事</h2>
+          </div>
+          <button class="icon-btn close-modal" type="button" data-close="todayReminderModal">×</button>
+        </div>
+        <div class="today-reminder-grid" id="todayReminderContent"></div>
+      </section>
+    </div>
+
     <template id="bookTemplate">
       <button class="book-item" type="button">
         <span class="book-name"></span>
@@ -421,6 +609,7 @@
       </button>
     </template>
 
+    <script src="assets/cet6-dictionary.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

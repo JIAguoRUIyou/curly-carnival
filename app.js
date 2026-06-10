@@ -3,6 +3,9 @@ const DONE_KEY = "smart-study-done-v1";
 const FOCUS_KEY = "smart-study-focus-v1";
 const REVIEW_KEY = "smart-study-review-v1";
 const THEME_KEY = "smart-study-entry-theme-v1";
+const ENGLISH_FAVORITES_KEY = "smart-study-english-favorites-v1";
+const MISTAKE_KEY = "smart-study-mistakes-v1";
+const DICTIONARY_KEY = "smart-study-cet6-dictionary-v1";
 
 const today = new Date();
 const isoDate = (date) => date.toISOString().slice(0, 10);
@@ -64,6 +67,8 @@ let currentView = "week";
 let currentHeatmapView = "month";
 let currentYearFilter = "all";
 let bookSearchQuery = "";
+let dictionaryPage = 1;
+let dictionaryPageSize = 48;
 
 const entryThemes = [
   ["forest", "#2f7d5c", "#1e5c43", "#2f6f9f", "#f8faf7", "linear-gradient(120deg, rgba(9,28,22,.82), rgba(47,125,92,.46)), url('assets/study-desk.png') center / cover", "linear-gradient(135deg,#1e5c43,#78c69a)"],
@@ -167,6 +172,36 @@ const nodes = {
   dailyEnglishText: document.querySelector("#dailyEnglishText"),
   dailyEnglishTranslation: document.querySelector("#dailyEnglishTranslation"),
   dailyEnglishGrammar: document.querySelector("#dailyEnglishGrammar"),
+  favoriteEnglishBtn: document.querySelector("#favoriteEnglishBtn"),
+  favoriteEnglishList: document.querySelector("#favoriteEnglishList"),
+  dictionarySearchInput: document.querySelector("#dictionarySearchInput"),
+  dictionaryStats: document.querySelector("#dictionaryStats"),
+  dictionaryStatus: document.querySelector("#dictionaryStatus"),
+  dictionaryResults: document.querySelector("#dictionaryResults"),
+  dictionaryPageSize: document.querySelector("#dictionaryPageSize"),
+  dictionaryPrevBtn: document.querySelector("#dictionaryPrevBtn"),
+  dictionaryNextBtn: document.querySelector("#dictionaryNextBtn"),
+  dictionaryPageInfo: document.querySelector("#dictionaryPageInfo"),
+  importDictionaryBtn: document.querySelector("#importDictionaryBtn"),
+  dictionaryImportInput: document.querySelector("#dictionaryImportInput"),
+  mistakeForm: document.querySelector("#mistakeForm"),
+  mistakeDate: document.querySelector("#mistakeDate"),
+  mistakeSubject: document.querySelector("#mistakeSubject"),
+  mistakeStars: document.querySelector("#mistakeStars"),
+  mistakeImageInput: document.querySelector("#mistakeImageInput"),
+  mistakeNote: document.querySelector("#mistakeNote"),
+  mistakePreview: document.querySelector("#mistakePreview"),
+  mistakeStatus: document.querySelector("#mistakeStatus"),
+  mistakeFilterDate: document.querySelector("#mistakeFilterDate"),
+  mistakeFilterSubject: document.querySelector("#mistakeFilterSubject"),
+  mistakeList: document.querySelector("#mistakeList"),
+  scoreTotal: document.querySelector("#scoreTotal"),
+  scoreRank: document.querySelector("#scoreRank"),
+  scoreProgress: document.querySelector("#scoreProgress"),
+  achievementBadges: document.querySelector("#achievementBadges"),
+  examCountdownList: document.querySelector("#examCountdownList"),
+  dashboardStats: document.querySelector("#dashboardStats"),
+  dashboardSubjects: document.querySelector("#dashboardSubjects"),
   entryScreen: document.querySelector("#entryScreen"),
   startLearningBtn: document.querySelector("#startLearningBtn"),
   entryThemeGrid: document.querySelector("#entryThemeGrid"),
@@ -180,10 +215,19 @@ const nodes = {
   gameBtn: document.querySelector("#gameBtn"),
   pomodoroBtn: document.querySelector("#pomodoroBtn"),
   reviewBtn: document.querySelector("#reviewBtn"),
+  dataBackupBtn: document.querySelector("#dataBackupBtn"),
   notesModal: document.querySelector("#notesModal"),
   gameModal: document.querySelector("#gameModal"),
   pomodoroModal: document.querySelector("#pomodoroModal"),
   reviewModal: document.querySelector("#reviewModal"),
+  backupModal: document.querySelector("#backupModal"),
+  exportDataBtn: document.querySelector("#exportDataBtn"),
+  importDataBtn: document.querySelector("#importDataBtn"),
+  compactDataBtn: document.querySelector("#compactDataBtn"),
+  importDataInput: document.querySelector("#importDataInput"),
+  backupStatus: document.querySelector("#backupStatus"),
+  todayReminderModal: document.querySelector("#todayReminderModal"),
+  todayReminderContent: document.querySelector("#todayReminderContent"),
   noteDate: document.querySelector("#noteDate"),
   noteBg: document.querySelector("#noteBg"),
   noteFont: document.querySelector("#noteFont"),
@@ -225,6 +269,10 @@ const nodes = {
 };
 
 const NOTE_KEY = "smart-study-note-v1";
+function getBackupKeys() {
+  return [STORAGE_KEY, DONE_KEY, FOCUS_KEY, REVIEW_KEY, THEME_KEY, NOTE_KEY, ENGLISH_FAVORITES_KEY, MISTAKE_KEY, DICTIONARY_KEY];
+}
+
 const dailyEnglishStories = [
   {
     title: "A Quiet Hour Before Sunrise",
@@ -596,6 +644,13 @@ const cleanCet6Words = cet6WordSource
     const [word, translation, keywordText, example] = line.split("|");
     return { word, translation, keywords: keywordText.split(","), example };
   });
+const builtInCet6Source = globalThis.CET6_DICTIONARY || null;
+const cleanCet6BuiltInWords = Array.isArray(builtInCet6Source?.words)
+  ? builtInCet6Source.words.map((entry) => normalizeDictionaryEntry(entry, "word")).filter(Boolean)
+  : [];
+const cleanCet6Phrases = Array.isArray(builtInCet6Source?.phrases)
+  ? builtInCet6Source.phrases.map((entry) => normalizeDictionaryEntry(entry, "phrase")).filter(Boolean)
+  : [];
 let gameDeck = [];
 let currentGameWord = null;
 let gameRound = 0;
@@ -607,6 +662,13 @@ let matchedPairs = new Set();
 let doneState = loadDoneState();
 let focusState = loadObject(FOCUS_KEY);
 let reviewState = loadObject(REVIEW_KEY);
+let englishFavoriteState = loadObject(ENGLISH_FAVORITES_KEY);
+let mistakeState = normalizeMistakeState(loadObject(MISTAKE_KEY));
+let dictionaryState = normalizeDictionaryState(loadObject(DICTIONARY_KEY));
+let currentDailyEnglishStory = null;
+let currentDailyEnglishIndex = 0;
+let currentMistakeStar = 3;
+let currentMistakeImage = "";
 let pomodoroTimer = null;
 let pomodoroRemaining = 25 * 60;
 let pomodoroStartedSeconds = 25 * 60;
@@ -676,12 +738,85 @@ function saveReviewState() {
   localStorage.setItem(REVIEW_KEY, JSON.stringify(reviewState));
 }
 
+function saveEnglishFavorites() {
+  localStorage.setItem(ENGLISH_FAVORITES_KEY, JSON.stringify(englishFavoriteState));
+}
+
+function saveMistakeState() {
+  localStorage.setItem(MISTAKE_KEY, JSON.stringify(mistakeState));
+}
+
+function saveDictionaryState() {
+  localStorage.setItem(DICTIONARY_KEY, JSON.stringify(dictionaryState));
+}
+
+function normalizeMistakeState(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.items)) return raw.items;
+  return [];
+}
+
+function normalizeDictionaryEntry(entry, type = "word") {
+  if (!entry) return null;
+  if (typeof entry === "string") {
+    const [term, translation = "", keywords = "", example = "", phonetic = ""] = entry.split("|");
+    if (!term?.trim()) return null;
+    return {
+      type,
+      word: term.trim(),
+      translation: translation.trim(),
+      keywords: keywords.split(",").map((item) => item.trim()).filter(Boolean),
+      example: example.trim(),
+      phonetic: phonetic.trim()
+    };
+  }
+  const term = entry.word || entry.phrase || entry.term || entry.text;
+  if (!term) return null;
+  return {
+    type: entry.type || type,
+    word: String(term).trim(),
+    translation: String(entry.translation || entry.meaning || entry.cn || entry.explain || "").trim(),
+    phonetic: String(entry.phonetic || entry.pronunciation || "").trim(),
+    keywords: Array.isArray(entry.keywords)
+      ? entry.keywords
+      : String(entry.keywords || entry.tags || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+    example: String(entry.example || entry.sentence || "").trim()
+  };
+}
+
+function normalizeDictionaryState(raw) {
+  const words = [];
+  const phrases = [];
+  const seen = new Set();
+  const pushEntry = (entry, fallbackType) => {
+    const normalized = normalizeDictionaryEntry(entry, fallbackType);
+    if (!normalized) return;
+    const key = `${normalized.type || fallbackType}::${normalized.word.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    if (normalized.type === "phrase") phrases.push(normalized);
+    else words.push(normalized);
+  };
+  if (Array.isArray(raw)) {
+    raw.forEach((entry) => pushEntry(entry, entry?.type || "word"));
+  } else {
+    (raw?.words || []).forEach((entry) => pushEntry(entry, "word"));
+    (raw?.phrases || []).forEach((entry) => pushEntry(entry, "phrase"));
+  }
+  return { words, phrases };
+}
+
 function renderDailyEnglish() {
   const startDate = new Date("2026-06-09T00:00:00");
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const dayIndex = Math.floor((todayStart - startDate) / 86400000);
   const story = createDailyEnglishStory(dayIndex);
+  currentDailyEnglishStory = story;
+  currentDailyEnglishIndex = ((dayIndex % DAILY_ENGLISH_TOTAL) + DAILY_ENGLISH_TOTAL) % DAILY_ENGLISH_TOTAL;
   nodes.dailyEnglishTitle.textContent = story.title;
   nodes.dailyEnglishText.textContent = story.text;
   nodes.dailyEnglishTranslation.textContent = story.translation;
@@ -691,6 +826,334 @@ function renderDailyEnglish() {
     item.innerHTML = `<strong>${pattern}</strong> ${explanation}`;
     nodes.dailyEnglishGrammar.append(item);
   });
+  renderEnglishFavorites();
+}
+
+function toggleDailyEnglishFavorite() {
+  if (!currentDailyEnglishStory) return;
+  const key = `story-${currentDailyEnglishIndex}`;
+  if (englishFavoriteState[key]) {
+    delete englishFavoriteState[key];
+  } else {
+    englishFavoriteState[key] = {
+      index: currentDailyEnglishIndex,
+      date: isoDate(new Date()),
+      title: currentDailyEnglishStory.title,
+      text: currentDailyEnglishStory.text,
+      translation: currentDailyEnglishStory.translation
+    };
+  }
+  saveEnglishFavorites();
+  renderEnglishFavorites();
+  renderDashboard();
+}
+
+function renderEnglishFavorites() {
+  if (!nodes.favoriteEnglishBtn || !nodes.favoriteEnglishList || !currentDailyEnglishStory) return;
+  const key = `story-${currentDailyEnglishIndex}`;
+  const isFavorite = Boolean(englishFavoriteState[key]);
+  nodes.favoriteEnglishBtn.textContent = isFavorite ? "取消收藏" : "收藏今日短篇";
+  nodes.favoriteEnglishBtn.classList.toggle("active", isFavorite);
+  const favorites = Object.values(englishFavoriteState).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  nodes.favoriteEnglishList.innerHTML = "";
+  if (!favorites.length) {
+    nodes.favoriteEnglishList.innerHTML = `<div class="empty-book-list">还没有收藏。遇到适合作文和翻译积累的短篇，可以先收藏起来。</div>`;
+    return;
+  }
+  favorites.slice(0, 12).forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "favorite-card";
+    card.innerHTML = `
+      <div>
+        <strong>${item.title}</strong>
+        <span>${item.date}</span>
+      </div>
+      <p>${item.text.slice(0, 150)}...</p>
+      <p class="translation">${item.translation.slice(0, 92)}...</p>
+    `;
+    nodes.favoriteEnglishList.append(card);
+  });
+}
+
+function builtInDictionaryWords() {
+  const sourceWords = cleanCet6BuiltInWords.length ? cleanCet6BuiltInWords : cleanCet6Words;
+  return sourceWords.map((item) => ({ ...item, type: "word", source: "built-in" }));
+}
+
+function builtInDictionaryPhrases() {
+  return cleanCet6Phrases.map((item) => ({ ...item, type: "phrase", source: "built-in" }));
+}
+
+function getDictionaryEntries() {
+  const entries = [...builtInDictionaryWords(), ...builtInDictionaryPhrases(), ...dictionaryState.words, ...dictionaryState.phrases];
+  const seen = new Set();
+  return entries.filter((entry) => {
+    const key = `${entry.type || "word"}::${entry.word.toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getGameWordPool() {
+  return getDictionaryEntries()
+    .filter((item) => item.type !== "phrase")
+    .filter((item) => item.word && item.translation)
+    .map((item) => ({
+      word: item.word,
+      translation: item.translation,
+      keywords: item.keywords?.length ? item.keywords : item.translation.split(/[，,、\s]+/).filter(Boolean),
+      example: item.example || `A good learner can use ${item.word} in a clear sentence.`
+    }));
+}
+
+function renderDictionary() {
+  if (!nodes.dictionaryResults) return;
+  const allEntries = getDictionaryEntries();
+  const query = nodes.dictionarySearchInput.value.trim().toLowerCase();
+  const matches = allEntries
+    .filter((entry) => {
+      if (!query) return true;
+      return [entry.word, entry.translation, entry.example, entry.phonetic, ...(entry.keywords || [])].join(" ").toLowerCase().includes(query);
+    });
+
+  const showAll = dictionaryPageSize === "all";
+  const pageSize = showAll ? matches.length || 1 : Math.max(1, Number(dictionaryPageSize) || 48);
+  const totalPages = showAll ? 1 : Math.max(1, Math.ceil(matches.length / pageSize));
+  dictionaryPage = Math.min(Math.max(1, dictionaryPage), totalPages);
+  const startIndex = showAll ? 0 : (dictionaryPage - 1) * pageSize;
+  const endIndex = showAll ? matches.length : Math.min(matches.length, startIndex + pageSize);
+  const visibleMatches = matches.slice(startIndex, endIndex);
+
+  const wordCount = builtInDictionaryWords().length + dictionaryState.words.length;
+  const phraseCount = builtInDictionaryPhrases().length + dictionaryState.phrases.length;
+  nodes.dictionaryStats.innerHTML = `
+    <span>当前单词 ${wordCount}</span>
+    <span>当前词组 ${phraseCount}</span>
+    <span>搜索结果 ${matches.length}</span>
+  `;
+  if (nodes.dictionaryPageInfo) {
+    nodes.dictionaryPageInfo.textContent = showAll
+      ? `已显示全部 ${matches.length} 条`
+      : `第 ${dictionaryPage} / ${totalPages} 页 · ${matches.length ? `${startIndex + 1}-${endIndex}` : "0"} / ${matches.length}`;
+  }
+  if (nodes.dictionaryPrevBtn) nodes.dictionaryPrevBtn.disabled = showAll || dictionaryPage <= 1;
+  if (nodes.dictionaryNextBtn) nodes.dictionaryNextBtn.disabled = showAll || dictionaryPage >= totalPages;
+  nodes.dictionaryResults.innerHTML = "";
+  if (!matches.length) {
+    nodes.dictionaryResults.innerHTML = `<div class="empty-book-list">没有找到匹配项。可以换个英文、中文释义或音标关键词试试。</div>`;
+    return;
+  }
+  visibleMatches.forEach((entry) => {
+    const card = document.createElement("article");
+    card.className = "dictionary-card";
+    card.innerHTML = `
+      <div>
+        <strong>${entry.word}</strong>
+        <span>${entry.type === "phrase" ? "词组" : "单词"}</span>
+      </div>
+      ${entry.phonetic ? `<p class="dictionary-phonetic">${entry.phonetic}</p>` : ""}
+      <p>${entry.translation || "暂无释义"}</p>
+      ${entry.example ? `<em>${entry.example}</em>` : ""}
+    `;
+    nodes.dictionaryResults.append(card);
+  });
+}
+
+function mergeDictionary(nextDictionary) {
+  const merged = normalizeDictionaryState({
+    words: [...dictionaryState.words, ...nextDictionary.words],
+    phrases: [...dictionaryState.phrases, ...nextDictionary.phrases]
+  });
+  dictionaryState = merged;
+  saveDictionaryState();
+}
+
+function importDictionaryFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || ""));
+      const nextDictionary = normalizeDictionaryState(parsed);
+      if (!nextDictionary.words.length && !nextDictionary.phrases.length) {
+        throw new Error("没有识别到 words 或 phrases 数据");
+      }
+      mergeDictionary(nextDictionary);
+      nodes.dictionaryStatus.textContent = `导入成功：新增 ${nextDictionary.words.length} 个单词、${nextDictionary.phrases.length} 个词组。`;
+      renderDictionary();
+      setupGame();
+    } catch (error) {
+      nodes.dictionaryStatus.textContent = `导入失败：${error.message}`;
+    } finally {
+      nodes.dictionaryImportInput.value = "";
+    }
+  });
+  reader.readAsText(file, "utf-8");
+}
+
+function renderMistakeSubjects() {
+  const addSubjects = [...new Set(state.books.map((book) => book.title))];
+  const filterSubjects = ["全部科目", ...addSubjects];
+  [nodes.mistakeSubject, nodes.mistakeFilterSubject].forEach((select, index) => {
+    if (!select) return;
+    const subjects = index === 0 ? addSubjects : filterSubjects;
+    const currentValue =
+      index === 0 ? nodes.mistakeSubject?.value || state.books[0]?.title : nodes.mistakeFilterSubject?.value || "全部科目";
+    select.innerHTML = "";
+    subjects.forEach((subject) => {
+      const option = document.createElement("option");
+      option.value = subject;
+      option.textContent = subject;
+      select.append(option);
+    });
+    select.value = subjects.includes(currentValue) ? currentValue : index === 0 ? state.books[0]?.title || "英语四级" : "全部科目";
+  });
+}
+
+function renderMistakeStars() {
+  if (!nodes.mistakeStars) return;
+  nodes.mistakeStars.innerHTML = "";
+  Array.from({ length: 5 }, (_, index) => index + 1).forEach((value) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `star-btn${value <= currentMistakeStar ? " active" : ""}`;
+    button.textContent = value <= currentMistakeStar ? "★" : "☆";
+    button.title = `${value} 星`;
+    button.addEventListener("click", () => {
+      currentMistakeStar = value;
+      renderMistakeStars();
+    });
+    nodes.mistakeStars.append(button);
+  });
+}
+
+function resizeImageFile(file, maxSide = 1200, quality = 0.86) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("图片读取失败"));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("图片加载失败"));
+      image.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function prepareMistakeImage(file) {
+  if (!file) return "";
+  const dataUrl = await resizeImageFile(file);
+  currentMistakeImage = dataUrl;
+  nodes.mistakePreview.innerHTML = `<img src="${dataUrl}" alt="错题预览" class="mistake-image-preview" />`;
+  return dataUrl;
+}
+
+function renderMistakes() {
+  if (!nodes.mistakeList) return;
+  const filterDate = nodes.mistakeFilterDate?.value || "";
+  const filterSubject = nodes.mistakeFilterSubject?.value || "全部科目";
+  const items = [...mistakeState]
+    .sort((a, b) => (b.stars || 0) - (a.stars || 0) || String(b.date).localeCompare(String(a.date)))
+    .filter((item) => !filterDate || item.date === filterDate)
+    .filter((item) => filterSubject === "全部科目" || item.subject === filterSubject);
+
+  nodes.mistakeList.innerHTML = "";
+  if (!items.length) {
+    nodes.mistakeList.innerHTML = `<div class="empty-book-list">这里还没有错题图片。你可以按日期、科目和星级慢慢积累。</div>`;
+    return;
+  }
+
+  items.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "mistake-card";
+    card.innerHTML = `
+      <img src="${item.image}" alt="错题图片" />
+      <div class="mistake-card-head">
+        <strong>${item.subject}</strong>
+        <span>${item.date}</span>
+      </div>
+      <div class="mistake-stars">${"★".repeat(item.stars)}${"☆".repeat(5 - item.stars)}</div>
+      <p>${item.note || "暂无备注"}</p>
+      <button class="ghost-light-btn" type="button">删除</button>
+    `;
+    card.querySelector("button").addEventListener("click", () => {
+      mistakeState = mistakeState.filter((entry) => entry.id !== item.id);
+      saveMistakeState();
+      renderMistakes();
+      renderDashboard();
+    });
+    nodes.mistakeList.append(card);
+  });
+}
+
+async function saveMistake(event) {
+  event.preventDefault();
+  const file = nodes.mistakeImageInput.files?.[0];
+  if (!file) {
+    nodes.mistakeStatus.textContent = "请先选择一张错题图片。";
+    return;
+  }
+  const image = await prepareMistakeImage(file);
+  const entry = {
+    id: `mistake-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    date: nodes.mistakeDate.value || isoDate(new Date()),
+    subject: nodes.mistakeSubject.value || state.books[0]?.title || "未命名科目",
+    stars: currentMistakeStar,
+    note: nodes.mistakeNote.value.trim(),
+    image
+  };
+  mistakeState.push(entry);
+  saveMistakeState();
+  nodes.mistakeForm.reset();
+  nodes.mistakeDate.value = isoDate(new Date());
+  renderMistakeSubjects();
+  currentMistakeStar = 3;
+  currentMistakeImage = "";
+  nodes.mistakePreview.textContent = "选择图片后会显示预览。";
+  renderMistakeStars();
+  renderMistakes();
+  renderDashboard();
+  nodes.mistakeStatus.textContent = "错题已保存到本地。";
+}
+
+function setupMistakes() {
+  nodes.mistakeDate.value = isoDate(new Date());
+  nodes.mistakeFilterDate.value = "";
+  nodes.mistakeFilterSubject.value = "全部科目";
+  renderMistakeSubjects();
+  renderMistakeStars();
+  renderMistakes();
+
+  nodes.mistakeForm.addEventListener("submit", saveMistake);
+  nodes.mistakeImageInput.addEventListener("change", async () => {
+    const file = nodes.mistakeImageInput.files?.[0];
+    if (!file) {
+      nodes.mistakePreview.textContent = "选择图片后会显示预览。";
+      currentMistakeImage = "";
+      return;
+    }
+    try {
+      nodes.mistakeStatus.textContent = "正在压缩图片...";
+      await prepareMistakeImage(file);
+      nodes.mistakeStatus.textContent = "图片已选中，保存即可加入错题集。";
+    } catch (error) {
+      currentMistakeImage = "";
+      nodes.mistakePreview.textContent = "图片预览失败。";
+      nodes.mistakeStatus.textContent = `图片处理失败：${error.message}`;
+    }
+  });
+  nodes.mistakeFilterDate.addEventListener("change", renderMistakes);
+  nodes.mistakeFilterSubject.addEventListener("change", renderMistakes);
 }
 
 function startEntryExperience() {
@@ -699,6 +1162,10 @@ function startEntryExperience() {
     nodes.entryScreen.classList.remove("reopen");
     nodes.entryScreen.classList.add("hidden");
     document.body.classList.remove("entry-active");
+    setTimeout(() => {
+      renderTodayReminder();
+      openModal(nodes.todayReminderModal);
+    }, 520);
   });
 }
 
@@ -796,6 +1263,7 @@ function addFocusMinutes(subject, minutes) {
   focusState[key][subject] = (focusState[key][subject] || 0) + minutes;
   saveFocusState();
   renderHeatmap();
+  renderDashboard();
 }
 
 function getActiveBook() {
@@ -960,6 +1428,7 @@ function generateMethod(book) {
     days > 56 ? "基础-强化-冲刺三段式" : days > 21 ? "强化与回忆并行" : "高频回忆与模拟冲刺";
   const recallRatio = book.mastery < 0.45 ? "40%" : book.mastery < 0.7 ? "55%" : "70%";
   const priority = [...book.chapters].sort((a, b) => b.difficulty - a.difficulty).slice(0, 3);
+  const [sprintTitle, sprintTip] = sprintLabel(days);
 
   return [
     {
@@ -980,6 +1449,10 @@ function generateMethod(book) {
         pressure > 1.4
           ? "时间偏紧，减少抄笔记，把学习单元压缩成“例题拆解-同类题-错因标签-次日复盘”。"
           : "时间相对充足，保持每周一次综合回顾，每两周安排一次模拟检测并调整薄弱模块。"
+    },
+    {
+      title: sprintTitle,
+      text: sprintTip
     }
   ];
 }
@@ -1006,11 +1479,17 @@ function buildPlan(book) {
     const date = addDays(today, day - 1);
     const phase = day / days;
     const tasks =
-      phase < 0.45
-        ? [`首轮理解：${chapter.name}`, "整理 3 个核心问题并闭卷复述", "完成对应基础题，记录错因标签"]
-        : phase < 0.78
-          ? [`二轮强化：${chapter.name}`, "限时做题并讲出解题路径", "复盘 1 天前和 7 天前的错题"]
-          : [`冲刺检测：${chapter.name}`, "完成混合题或真题片段", "把错误压缩成考前清单"];
+      days <= 7
+        ? [`终极冲刺：${chapter.name}`, "完成一组限时真题或综合题", "只整理高频错因和考前清单"]
+        : days <= 14
+          ? [`压缩冲刺：${chapter.name}`, "用错题反推薄弱概念", "完成真题片段并复述得分点"]
+          : days <= 30
+            ? [`冲刺强化：${chapter.name}`, "主动回忆核心公式、词汇或题型", "完成限时训练并标记错因"]
+            : phase < 0.45
+              ? [`首轮理解：${chapter.name}`, "整理 3 个核心问题并闭卷复述", "完成对应基础题，记录错因标签"]
+              : phase < 0.78
+                ? [`二轮强化：${chapter.name}`, "限时做题并讲出解题路径", "复盘 1 天前和 7 天前的错题"]
+                : [`冲刺检测：${chapter.name}`, "完成混合题或真题片段", "把错误压缩成考前清单"];
 
     dailyBlocks.push({
       type: "day",
@@ -1091,6 +1570,7 @@ function renderPlan(book) {
       doneState[checkbox.dataset.taskKey] = checkbox.checked;
       saveDoneState();
       renderHeatmap();
+      renderDashboard();
     });
   });
 }
@@ -1149,6 +1629,327 @@ function getWeekDates() {
   const day = now.getDay() || 7;
   const monday = addDays(now, 1 - day);
   return Array.from({ length: 7 }, (_, index) => addDays(monday, index));
+}
+
+function getPlannedTasksForDate(dateKey) {
+  let totalTasks = 0;
+  state.books.forEach((book) => {
+    const { dailyBlocks } = buildPlan(book);
+    const block = dailyBlocks.find((item) => item.dateKey === dateKey);
+    if (block) totalTasks += block.tasks.length;
+  });
+  return totalTasks;
+}
+
+function getStreakDays() {
+  let streak = 0;
+  for (let offset = 0; offset < 365; offset += 1) {
+    const key = isoDate(addDays(new Date(), -offset));
+    const stats = getDateStats(key);
+    if (stats.completedTasks > 0 || stats.focusMinutes > 0) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function getReviewCount() {
+  return Object.values(reviewState).filter((item) => item?.priority || item?.blocker || item?.minimum).length;
+}
+
+function getTotalFocusMinutes() {
+  return Object.values(focusState).reduce(
+    (sum, subjects) => sum + Object.values(subjects || {}).reduce((inner, minutes) => inner + Number(minutes || 0), 0),
+    0
+  );
+}
+
+function getCompletedTaskCount() {
+  return Object.values(doneState).filter(Boolean).length;
+}
+
+function getDashboardMetrics() {
+  const weekDates = getWeekDates().map(isoDate);
+  let weekCompleted = 0;
+  let weekPlanned = 0;
+  let weekFocus = 0;
+  const subjectTotals = {};
+
+  weekDates.forEach((dateKey) => {
+    const stats = getDateStats(dateKey);
+    weekCompleted += stats.completedTasks;
+    weekPlanned += getPlannedTasksForDate(dateKey);
+    weekFocus += stats.focusMinutes;
+    Object.entries(focusState[dateKey] || {}).forEach(([subject, minutes]) => {
+      subjectTotals[subject] = (subjectTotals[subject] || 0) + Number(minutes || 0);
+    });
+  });
+
+  const completedTasks = getCompletedTaskCount();
+  const totalFocus = getTotalFocusMinutes();
+  const reviewCount = getReviewCount();
+  const favoriteCount = Object.keys(englishFavoriteState).length;
+  const mistakeCount = mistakeState.length;
+  const streak = getStreakDays();
+  const score = completedTasks * 10 + Math.floor(totalFocus / 5) + reviewCount * 8 + favoriteCount * 6 + mistakeCount * 12 + streak * 15;
+
+  return {
+    weekCompleted,
+    weekPlanned,
+    weekFocus,
+    completionRate: weekPlanned ? Math.round((weekCompleted / weekPlanned) * 100) : 0,
+    subjectTotals,
+    completedTasks,
+    totalFocus,
+    reviewCount,
+    favoriteCount,
+    mistakeCount,
+    streak,
+    score
+  };
+}
+
+function getScoreRank(score) {
+  if (score >= 1800) return "自律冲刺王";
+  if (score >= 1000) return "稳定推进者";
+  if (score >= 500) return "节奏建立者";
+  if (score >= 160) return "认真起步者";
+  return "新手学习者";
+}
+
+function getNextScoreTarget(score) {
+  return [160, 500, 1000, 1800, 2600].find((target) => score < target) || 2600;
+}
+
+function sprintLabel(days) {
+  if (days <= 7) return ["终极冲刺", "只保留真题、错题和高频清单，每天做一次限时检测。"];
+  if (days <= 14) return ["压缩冲刺", "减少新内容，把错因标签和套题复盘放到最前面。"];
+  if (days <= 30) return ["冲刺模式", "提高模拟题和主动回忆比例，弱项章节优先。"];
+  return ["常规推进", "继续按章节难度推进，每周做一次综合回顾。"];
+}
+
+function renderDashboard() {
+  if (!nodes.scoreTotal) return;
+  const metrics = getDashboardMetrics();
+  const nextTarget = getNextScoreTarget(metrics.score);
+  nodes.scoreTotal.textContent = String(metrics.score);
+  nodes.scoreRank.textContent = getScoreRank(metrics.score);
+  nodes.scoreProgress.style.width = `${Math.min(100, Math.round((metrics.score / nextTarget) * 100))}%`;
+
+  const achievements = [
+    ["初露锋芒", metrics.score >= 160, "积分达到 160"],
+    ["三日不断", metrics.streak >= 3, "连续学习 3 天"],
+    ["七日稳定", metrics.streak >= 7, "连续学习 7 天"],
+    ["任务十连", metrics.completedTasks >= 10, "完成 10 个任务"],
+    ["任务五十", metrics.completedTasks >= 50, "完成 50 个任务"],
+    ["专注 300", metrics.totalFocus >= 300, "累计专注 300 分钟"],
+    ["复盘习惯", metrics.reviewCount >= 7, "保存 7 次每日复盘"],
+    ["英文收藏家", metrics.favoriteCount >= 5, "收藏 5 篇英文短篇"],
+    ["错题整理", metrics.mistakeCount >= 3, "保存 3 张错题图片"]
+  ];
+  nodes.achievementBadges.innerHTML = achievements
+    .map(([title, unlocked, desc]) => `<span class="badge ${unlocked ? "unlocked" : ""}"><strong>${title}</strong>${desc}</span>`)
+    .join("");
+
+  const countdownItems = [...state.books]
+    .sort((a, b) => daysUntil(a.examDate) - daysUntil(b.examDate))
+    .slice(0, 6);
+  nodes.examCountdownList.innerHTML = countdownItems
+    .map((book) => {
+      const days = daysUntil(book.examDate);
+      const [label, tip] = sprintLabel(days);
+      return `<article class="countdown-item"><strong>${book.title}</strong><span>${days} 天 · ${label}</span><p>${tip}</p></article>`;
+    })
+    .join("");
+
+  nodes.dashboardStats.innerHTML = `
+    <div><strong>${metrics.completionRate}%</strong><span>本周完成率</span></div>
+    <div><strong>${metrics.weekCompleted}/${metrics.weekPlanned}</strong><span>本周任务</span></div>
+    <div><strong>${metrics.weekFocus}</strong><span>本周专注分钟</span></div>
+    <div><strong>${metrics.streak}</strong><span>连续学习天数</span></div>
+  `;
+
+  const subjectEntries = Object.entries(metrics.subjectTotals).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  nodes.dashboardSubjects.innerHTML = subjectEntries.length
+    ? subjectEntries
+        .map(([subject, minutes]) => {
+          const width = Math.max(8, Math.round((minutes / Math.max(1, metrics.weekFocus)) * 100));
+          return `<div class="subject-bar"><span>${subject}</span><strong>${minutes} 分钟</strong><i style="width:${width}%"></i></div>`;
+        })
+        .join("")
+    : `<div class="empty-book-list">本周还没有番茄钟记录，完成一次专注后这里会显示科目分布。</div>`;
+}
+
+function exportAllData() {
+  const backup = {
+    app: "smart-study-planner",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items: {}
+  };
+  getBackupKeys().forEach((key) => {
+    backup.items[key] = localStorage.getItem(key);
+  });
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `智习计划-数据备份-${isoDate(new Date())}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  nodes.backupStatus.textContent = `已导出 ${getBackupKeys().length} 类本地数据。`;
+}
+
+function refreshStateAfterImport() {
+  state = loadState();
+  activeId = state.activeId || state.books[0].id;
+  doneState = loadDoneState();
+  focusState = loadObject(FOCUS_KEY);
+  reviewState = loadObject(REVIEW_KEY);
+  englishFavoriteState = loadObject(ENGLISH_FAVORITES_KEY);
+  mistakeState = normalizeMistakeState(loadObject(MISTAKE_KEY));
+  dictionaryState = normalizeDictionaryState(loadObject(DICTIONARY_KEY));
+  applyEntryTheme(localStorage.getItem(THEME_KEY) || entryThemes[0][0]);
+  renderDailyEnglish();
+  render();
+}
+
+function importAllData(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const backup = JSON.parse(String(reader.result || ""));
+      if (backup?.app !== "smart-study-planner" || typeof backup.items !== "object") {
+        throw new Error("文件格式不匹配");
+      }
+      const confirmed = window.confirm("导入会覆盖当前浏览器里的学习数据。确定继续吗？");
+      if (!confirmed) {
+        nodes.backupStatus.textContent = "已取消导入。";
+        return;
+      }
+      getBackupKeys().forEach((key) => {
+        if (Object.prototype.hasOwnProperty.call(backup.items, key)) {
+          const value = backup.items[key];
+          if (value === null || value === undefined) {
+            localStorage.removeItem(key);
+          } else {
+            localStorage.setItem(key, String(value));
+          }
+        }
+      });
+      refreshStateAfterImport();
+      nodes.backupStatus.textContent = `导入成功：${backup.exportedAt ? `备份时间 ${new Date(backup.exportedAt).toLocaleString()}` : "已恢复备份数据"}。`;
+    } catch (error) {
+      nodes.backupStatus.textContent = `导入失败：${error.message}`;
+    } finally {
+      nodes.importDataInput.value = "";
+    }
+  });
+  reader.readAsText(file, "utf-8");
+}
+
+function resizeDataUrl(dataUrl, maxSide = 900, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onerror = () => reject(new Error("图片压缩失败"));
+    image.onload = () => {
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext("2d");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    image.src = dataUrl;
+  });
+}
+
+async function compactMistakeImages() {
+  if (!mistakeState.length) {
+    nodes.backupStatus.textContent = "当前没有错题图片需要瘦身。";
+    return;
+  }
+  nodes.backupStatus.textContent = "正在压缩错题图片...";
+  let before = 0;
+  let after = 0;
+  const compacted = [];
+  for (const item of mistakeState) {
+    before += item.image?.length || 0;
+    if (item.image?.startsWith("data:image/")) {
+      const image = await resizeDataUrl(item.image);
+      after += image.length;
+      compacted.push({ ...item, image });
+    } else {
+      after += item.image?.length || 0;
+      compacted.push(item);
+    }
+  }
+  mistakeState = compacted;
+  saveMistakeState();
+  renderMistakes();
+  renderDashboard();
+  const saved = Math.max(0, before - after);
+  nodes.backupStatus.textContent = `数据瘦身完成，约减少 ${Math.round(saved / 1024)} KB。`;
+}
+
+function getTodayPlanItems(limit = 6) {
+  const dateKey = isoDate(new Date());
+  const items = [];
+  state.books.forEach((book) => {
+    const { dailyBlocks } = buildPlan(book);
+    const block = dailyBlocks.find((item) => item.dateKey === dateKey);
+    if (!block) return;
+    block.tasks.forEach((task, index) => {
+      items.push({
+        subject: book.title,
+        task,
+        done: Boolean(doneState[taskKey(block, task, index)])
+      });
+    });
+  });
+  return items.slice(0, limit);
+}
+
+function renderTodayReminder() {
+  if (!nodes.todayReminderContent) return;
+  const metrics = getDashboardMetrics();
+  const todayTasks = getTodayPlanItems();
+  const topMistakes = [...mistakeState]
+    .sort((a, b) => (b.stars || 0) - (a.stars || 0) || String(b.date).localeCompare(String(a.date)))
+    .slice(0, 3);
+  const nearestExam = [...state.books].sort((a, b) => daysUntil(a.examDate) - daysUntil(b.examDate))[0];
+  const examDays = nearestExam ? daysUntil(nearestExam.examDate) : 0;
+  const [mode] = nearestExam ? sprintLabel(examDays) : ["暂无考试"];
+
+  nodes.todayReminderContent.innerHTML = `
+    <article class="today-card">
+      <strong>今日计划</strong>
+      ${
+        todayTasks.length
+          ? `<ul>${todayTasks.map((item) => `<li>${item.done ? "已完成" : "待完成"} · ${item.subject}：${item.task}</li>`).join("")}</ul>`
+          : `<p>今天暂无计划，先在教材库生成计划。</p>`
+      }
+    </article>
+    <article class="today-card">
+      <strong>高星错题</strong>
+      ${
+        topMistakes.length
+          ? `<ul>${topMistakes.map((item) => `<li>${"★".repeat(item.stars)} · ${item.subject} · ${item.date}</li>`).join("")}</ul>`
+          : `<p>还没有错题图片，遇到卡点时先拍一张。</p>`
+      }
+    </article>
+    <article class="today-card">
+      <strong>英语短篇</strong>
+      <p>${currentDailyEnglishStory?.title || "今日英文短篇"}</p>
+    </article>
+    <article class="today-card">
+      <strong>状态</strong>
+      <p>连续学习 ${metrics.streak} 天，当前积分 ${metrics.score}。${nearestExam ? `${nearestExam.title || nearestExam.title} 距离考试 ${examDays} 天，${mode}。` : ""}</p>
+    </article>
+  `;
 }
 
 function renderHeatmap() {
@@ -1368,6 +2169,11 @@ function render() {
   renderPlan(book);
   renderPomodoroSubjects();
   renderHeatmap();
+  renderMistakeSubjects();
+  renderMistakeStars();
+  renderMistakes();
+  renderDictionary();
+  renderDashboard();
 }
 
 function openModal(modal) {
@@ -1530,7 +2336,7 @@ function shuffle(items) {
 }
 
 function setupGame() {
-  gameDeck = shuffle(cleanCet6Words).slice(0, 6);
+  gameDeck = shuffle(getGameWordPool()).slice(0, 6);
   gameRound = 0;
   gameTotalScore = 0;
   selectedEnglish = null;
@@ -1723,6 +2529,7 @@ function saveReview(event) {
     minimum: nodes.reviewMinimum.value.trim()
   };
   saveReviewState();
+  renderDashboard();
   closeModal(nodes.reviewModal);
 }
 
@@ -1849,6 +2656,31 @@ nodes.exportBtn.addEventListener("click", () => {
 
 nodes.exportTodayImageBtn.addEventListener("click", exportTodayImage);
 nodes.exportWeeklyImageBtn.addEventListener("click", exportWeeklyImage);
+nodes.favoriteEnglishBtn.addEventListener("click", toggleDailyEnglishFavorite);
+nodes.dictionarySearchInput.addEventListener("input", () => {
+  dictionaryPage = 1;
+  renderDictionary();
+});
+nodes.dictionaryPageSize?.addEventListener("change", () => {
+  dictionaryPageSize = nodes.dictionaryPageSize.value === "all" ? "all" : Number(nodes.dictionaryPageSize.value) || 48;
+  dictionaryPage = 1;
+  renderDictionary();
+});
+nodes.dictionaryPrevBtn?.addEventListener("click", () => {
+  dictionaryPage = Math.max(1, dictionaryPage - 1);
+  renderDictionary();
+});
+nodes.dictionaryNextBtn?.addEventListener("click", () => {
+  dictionaryPage += 1;
+  renderDictionary();
+});
+nodes.importDictionaryBtn.addEventListener("click", () => nodes.dictionaryImportInput.click());
+nodes.dictionaryImportInput.addEventListener("change", () => importDictionaryFile(nodes.dictionaryImportInput.files?.[0]));
+nodes.dataBackupBtn.addEventListener("click", () => openModal(nodes.backupModal));
+nodes.exportDataBtn.addEventListener("click", exportAllData);
+nodes.importDataBtn.addEventListener("click", () => nodes.importDataInput.click());
+nodes.compactDataBtn.addEventListener("click", compactMistakeImages);
+nodes.importDataInput.addEventListener("change", () => importAllData(nodes.importDataInput.files?.[0]));
 nodes.notesBtn.addEventListener("click", () => openModal(nodes.notesModal));
 nodes.gameBtn.addEventListener("click", () => {
   setupGame();
@@ -1891,6 +2723,8 @@ document.addEventListener("keydown", (event) => {
     closeModal(nodes.gameModal);
     closeModal(nodes.pomodoroModal);
     closeModal(nodes.reviewModal);
+    closeModal(nodes.backupModal);
+    closeModal(nodes.todayReminderModal);
   }
 });
 
@@ -1899,6 +2733,7 @@ setupGame();
 setPomodoroDuration();
 setupEntryThemes();
 setupFeatureNavigation();
+setupMistakes();
 startEntryExperience();
 renderDailyEnglish();
 render();
