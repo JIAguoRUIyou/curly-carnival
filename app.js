@@ -98,6 +98,52 @@ const entryThemes = [
   ["paper", "#6b7280", "#374151", "#9ca3af", "#fafafa", "linear-gradient(135deg,#f4f1ea,#d8d3c7), repeating-linear-gradient(0deg, rgba(40,40,40,.06) 0 1px, transparent 1px 22px)", "linear-gradient(135deg,#6b7280,#d1d5db)"]
 ];
 
+const themeSceneBackgrounds = [
+  "radial-gradient(circle at 18% 18%, rgba(174, 241, 188, .42), transparent 25%), radial-gradient(circle at 82% 70%, rgba(28, 74, 46, .72), transparent 34%), repeating-linear-gradient(118deg, rgba(255,255,255,.08) 0 2px, transparent 2px 18px), linear-gradient(135deg, #0d2b20, #2f7d5c 54%, #10251d)",
+  "radial-gradient(circle at 24% 18%, rgba(204, 245, 255, .55), transparent 24%), repeating-radial-gradient(ellipse at 72% 82%, rgba(255,255,255,.18) 0 3px, transparent 3px 18px), linear-gradient(150deg, #06334a, #287aa8 50%, #21a0a0)",
+  "radial-gradient(circle at 22% 24%, rgba(255, 232, 151, .72), transparent 24%), linear-gradient(168deg, rgba(255,255,255,.12) 0 18%, transparent 18% 100%), linear-gradient(135deg, #7b2d26, #d96d3f 45%, #f4a261)",
+  "radial-gradient(circle at 20% 22%, rgba(255,255,255,.45) 0 1px, transparent 2px), radial-gradient(circle at 72% 18%, rgba(214,190,255,.55), transparent 24%), linear-gradient(135deg, #24143f, #7357b7 58%, #c06fb1)",
+  "repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, transparent 1px 24px), linear-gradient(135deg, #0f172a, #334155 58%, #64748b)",
+  "radial-gradient(circle at 16% 76%, rgba(169,255,221,.52), transparent 26%), repeating-linear-gradient(45deg, rgba(255,255,255,.09) 0 5px, transparent 5px 18px), linear-gradient(135deg, #0f4d46, #2fa38b 52%, #3aa9c9)",
+  "radial-gradient(circle at 80% 18%, rgba(255,198,184,.8), transparent 24%), radial-gradient(circle at 25% 80%, rgba(255,255,255,.16), transparent 20%), linear-gradient(135deg, #6d2738, #dd6b6b 55%, #f4a261)",
+  "repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 1px, transparent 1px 10px), radial-gradient(circle at 72% 28%, rgba(255,230,148,.55), transparent 25%), linear-gradient(135deg, #3b2f12, #b7791f 52%, #f6d365)",
+  "radial-gradient(circle at 28% 24%, rgba(255,180,203,.65), transparent 26%), repeating-radial-gradient(circle at 78% 72%, rgba(255,255,255,.12) 0 2px, transparent 2px 14px), linear-gradient(135deg, #4a1630, #c44569 58%, #f06292)",
+  "radial-gradient(circle at 28% 26%, rgba(255,255,255,.65), transparent 17%), radial-gradient(circle at 72% 34%, rgba(255,255,255,.34), transparent 18%), linear-gradient(180deg, #0f4c81, #3182ce 58%, #90cdf4)",
+  "repeating-radial-gradient(circle at 30% 30%, rgba(255,255,255,.13) 0 2px, transparent 2px 16px), linear-gradient(120deg, rgba(199,232,93,.34), transparent 38%), linear-gradient(135deg, #315b1f, #5a9f2f 54%, #9ac23c)",
+  "repeating-linear-gradient(120deg, rgba(255,255,255,.11) 0 2px, transparent 2px 16px), radial-gradient(circle at 80% 75%, rgba(46,196,182,.7), transparent 24%), linear-gradient(135deg, #073b4c, #0f8b8d 55%, #2ec4b6)",
+  "repeating-radial-gradient(circle at 25% 25%, rgba(255,255,255,.1) 0 2px, transparent 2px 12px), radial-gradient(circle at 76% 18%, rgba(214,164,255,.48), transparent 24%), linear-gradient(135deg, #2e1745, #8e44ad 55%, #bb6bd9)",
+  "repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 2px, transparent 2px 9px), radial-gradient(circle at 68% 24%, rgba(216,180,138,.35), transparent 24%), linear-gradient(135deg, #2d1b12, #8b5e34 56%, #b08968)",
+  "radial-gradient(circle at 70% 20%, rgba(255,255,255,.12), transparent 24%), repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 1px, transparent 1px 14px), linear-gradient(135deg, #11161c, #3f4a54 58%, #7a8793)",
+  "radial-gradient(circle at 20% 75%, rgba(42,157,143,.5), transparent 24%), radial-gradient(circle at 78% 20%, rgba(255,220,170,.28), transparent 22%), linear-gradient(135deg, #783224, #e76f51 54%, #2a9d8f)",
+  "radial-gradient(circle at 18% 20%, rgba(255,255,255,.32) 0 1px, transparent 2px), radial-gradient(circle at 68% 28%, rgba(120,160,255,.45), transparent 23%), linear-gradient(135deg, #06133a, #264b96 55%, #4d7cce)",
+  "repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 4px, transparent 4px 24px), radial-gradient(circle at 24% 74%, rgba(185,223,138,.46), transparent 25%), linear-gradient(135deg, #254d2b, #4f8a45 55%, #8dbf67)",
+  "radial-gradient(circle at 72% 72%, rgba(255,150,180,.58), transparent 25%), repeating-linear-gradient(45deg, rgba(255,255,255,.08) 0 3px, transparent 3px 13px), linear-gradient(135deg, #3d1328, #9f315c 55%, #d55c83)",
+  "repeating-linear-gradient(45deg, rgba(255,255,255,.13) 0 1px, transparent 1px 14px), radial-gradient(circle at 20% 18%, rgba(199,249,255,.52), transparent 24%), linear-gradient(135deg, #173f52, #4f9db3 54%, #a6e3e9)",
+  "radial-gradient(circle at 25% 28%, rgba(255,230,170,.6), transparent 22%), linear-gradient(168deg, transparent 0 38%, rgba(255,255,255,.15) 38% 40%, transparent 40% 100%), linear-gradient(135deg, #5c3f21, #c28f44 55%, #e9c46a)",
+  "radial-gradient(circle at 20% 20%, rgba(255,210,255,.4), transparent 20%), repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 2px, transparent 2px 18px), linear-gradient(135deg, #34113f, #a855a5 54%, #f0abfc)",
+  "radial-gradient(circle at 72% 18%, rgba(100,216,168,.65), transparent 23%), radial-gradient(circle at 22% 78%, rgba(255,255,255,.16), transparent 20%), linear-gradient(135deg, #083b2d, #1f9d72 55%, #64d8a8)",
+  "repeating-linear-gradient(135deg, rgba(255,255,255,.09) 0 2px, transparent 2px 13px), radial-gradient(circle at 75% 24%, rgba(255,154,167,.48), transparent 22%), linear-gradient(135deg, #3b0d17, #b83242 55%, #ef6f7f)",
+  "radial-gradient(circle at 80% 80%, rgba(200,230,255,.35), transparent 22%), repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 20px), linear-gradient(135deg, #1f2f3d, #58728a 55%, #8fb3d1)",
+  "repeating-radial-gradient(circle at 30% 30%, rgba(255,255,255,.11) 0 2px, transparent 2px 13px), radial-gradient(circle at 70% 70%, rgba(196,217,107,.4), transparent 24%), linear-gradient(135deg, #28381e, #607d3b 55%, #a3b65c)",
+  "radial-gradient(circle at 20% 20%, rgba(255,255,255,.23), transparent 3%), radial-gradient(circle at 70% 35%, rgba(255,255,255,.18), transparent 2px), linear-gradient(135deg, #050816, #4c51bf 58%, #7f9cf5)",
+  "radial-gradient(circle at 72% 30%, rgba(255,180,90,.58), transparent 23%), repeating-radial-gradient(circle at 20% 72%, rgba(255,255,255,.08) 0 1px, transparent 1px 12px), linear-gradient(135deg, #3f1608, #c2410c 55%, #f97316)",
+  "repeating-linear-gradient(115deg, rgba(255,255,255,.12) 0 1px, transparent 1px 12px), radial-gradient(circle at 24% 22%, rgba(154,209,212,.34), transparent 24%), linear-gradient(135deg, #143642, #40798c 55%, #70a9a1)",
+  "repeating-linear-gradient(0deg, rgba(40,40,40,.06) 0 1px, transparent 1px 22px), radial-gradient(circle at 74% 24%, rgba(255,255,255,.62), transparent 20%), linear-gradient(135deg, #f4f1ea, #d8d3c7 56%, #9ca3af)"
+];
+
+function hexToRgba(hex, alpha) {
+  const normalized = hex.replace("#", "");
+  const value = Number.parseInt(normalized, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+function buildStudyBackground(theme, index, strength = 1) {
+  return themeSceneBackgrounds[index % themeSceneBackgrounds.length];
+}
+
 const nodes = {
   bookCount: document.querySelector("#bookCount"),
   bookList: document.querySelector("#bookList"),
@@ -124,6 +170,7 @@ const nodes = {
   entryScreen: document.querySelector("#entryScreen"),
   startLearningBtn: document.querySelector("#startLearningBtn"),
   entryThemeGrid: document.querySelector("#entryThemeGrid"),
+  returnHomeBtn: document.querySelector("#returnHomeBtn"),
   resetBtn: document.querySelector("#resetBtn"),
   deleteBtn: document.querySelector("#deleteBtn"),
   exportBtn: document.querySelector("#exportBtn"),
@@ -649,9 +696,20 @@ function renderDailyEnglish() {
 function startEntryExperience() {
   document.body.classList.add("entry-active");
   nodes.startLearningBtn.addEventListener("click", () => {
+    nodes.entryScreen.classList.remove("reopen");
     nodes.entryScreen.classList.add("hidden");
     document.body.classList.remove("entry-active");
   });
+}
+
+function returnToEntryExperience() {
+  document.body.classList.add("entry-active");
+  nodes.entryScreen.classList.add("reopen");
+  nodes.entryScreen.classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  setTimeout(() => {
+    nodes.entryScreen.classList.remove("reopen");
+  }, 900);
 }
 
 function setupEntryThemes() {
@@ -661,7 +719,7 @@ function setupEntryThemes() {
     button.className = "theme-swatch";
     button.type = "button";
     button.title = `背景 ${index + 1}`;
-    button.style.setProperty("--swatch-bg", theme[6]);
+    button.style.setProperty("--swatch-bg", buildStudyBackground(theme, index, 0.86));
     button.dataset.theme = theme[0];
     button.addEventListener("click", () => {
       applyEntryTheme(theme[0]);
@@ -674,16 +732,42 @@ function setupEntryThemes() {
 
 function applyEntryTheme(themeName) {
   const theme = entryThemes.find((item) => item[0] === themeName) || entryThemes[0];
-  const [, green, greenDark, blue, paper, entryBg] = theme;
+  const themeIndex = Math.max(0, entryThemes.findIndex((item) => item[0] === theme[0]));
+  const [, green, greenDark, blue, paper] = theme;
+  const studyBackground = buildStudyBackground(theme, themeIndex);
   const root = document.documentElement;
   root.style.setProperty("--green", green);
   root.style.setProperty("--green-dark", greenDark);
   root.style.setProperty("--blue", blue);
   root.style.setProperty("--paper", paper);
-  root.style.setProperty("--entry-bg", entryBg);
+  root.style.setProperty("--entry-bg", studyBackground);
+  root.style.setProperty("--app-bg", studyBackground);
+  root.style.setProperty("--hero-overlay", `linear-gradient(90deg, ${hexToRgba(greenDark, 0.82)}, ${hexToRgba(blue, 0.42)} 54%, rgba(10, 22, 18, 0.08))`);
+  root.style.setProperty("--study-flow-bg", `linear-gradient(180deg, ${hexToRgba(paper, 0.96)}, ${hexToRgba(paper, 0.92)}), ${studyBackground}`);
   document.querySelectorAll(".theme-swatch").forEach((button) => {
     button.classList.toggle("active", button.dataset.theme === theme[0]);
   });
+}
+
+function showFeaturePanel(panelId, shouldScroll = false) {
+  const panel = document.querySelector(`#${panelId}`);
+  if (!panel) return;
+  document.querySelectorAll(".feature-panel").forEach((item) => {
+    item.classList.toggle("active", item.id === panelId);
+  });
+  document.querySelectorAll("[data-feature-target]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.featureTarget === panelId);
+  });
+  if (shouldScroll) {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function setupFeatureNavigation() {
+  document.querySelectorAll("[data-feature-target]").forEach((button) => {
+    button.addEventListener("click", () => showFeaturePanel(button.dataset.featureTarget, true));
+  });
+  showFeaturePanel(document.querySelector(".feature-panel.active")?.id || "plannerPanel");
 }
 
 function createDailyEnglishStory(dayIndex) {
@@ -1723,6 +1807,8 @@ nodes.resetBtn.addEventListener("click", () => {
   render();
 });
 
+nodes.returnHomeBtn.addEventListener("click", returnToEntryExperience);
+
 nodes.deleteBtn.addEventListener("click", () => {
   if (state.books.length === 1) return;
   state.books = state.books.filter((book) => book.id !== activeId);
@@ -1734,6 +1820,7 @@ nodes.deleteBtn.addEventListener("click", () => {
 nodes.generateAllBtn.addEventListener("click", () => {
   renderMethod(getActiveBook());
   renderPlan(getActiveBook());
+  showFeaturePanel("recordPanel");
   document.querySelector(".plan-section").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -1810,6 +1897,8 @@ document.addEventListener("keydown", (event) => {
 setupNote();
 setupGame();
 setPomodoroDuration();
+setupEntryThemes();
+setupFeatureNavigation();
 startEntryExperience();
 renderDailyEnglish();
 render();

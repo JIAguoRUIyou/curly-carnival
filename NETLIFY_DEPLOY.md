@@ -1,14 +1,21 @@
 # Netlify 部署说明
 
-这个版本已经包含联网搜索教材所需的 Netlify Functions：
+当前版本是纯静态网站，已经移除了联网搜索教材栏目和 Netlify Functions。你可以直接用 Netlify Drop 分享给朋友。
 
-- 前端页面：`index.html`、`styles.css`、`app.js`
-- Netlify 配置：`netlify.toml`
-- 联网搜索接口：`netlify/functions/search-books.mjs`
+## 最简单方法：Netlify Drop
 
-## 推荐方法：GitHub 连接 Netlify
+1. 解压 `study-planner-netlify.zip`。
+2. 打开 Netlify Drop。
+3. 把解压后的文件夹内容拖进去，注意根目录里要能直接看到：
+   - `index.html`
+   - `styles.css`
+   - `app.js`
+   - `assets/`
+4. 部署完成后，Netlify 会生成一个公开网址。
 
-这个方法最稳定，也适合你以后继续更新。
+## 长期分享方法：GitHub 连接 Netlify
+
+这个方法适合以后继续更新，网址一般不会变。
 
 1. 新建一个 GitHub 仓库。
 2. 把 `study-planner` 文件夹里的全部内容上传到仓库根目录。
@@ -18,70 +25,20 @@
 6. 构建设置保持简单：
    - Build command：留空
    - Publish directory：`.`
-   - Functions directory：`netlify/functions`
 7. 点击 Deploy。
 
-部署成功后，教材搜索会请求：
-
-```text
-https://你的网站域名/.netlify/functions/search-books?q=关键词
-```
-
-如果这个地址能返回 JSON，就说明联网搜索接口已经生效。
-
-## 也可以用 Netlify CLI
-
-适合你不想每次手动拖文件时使用。
-
-1. 安装 Netlify CLI：
-
-```bash
-npm install -g netlify-cli
-```
-
-2. 进入网站文件夹：
-
-```bash
-cd study-planner
-```
-
-3. 本地预览 Functions：
-
-```bash
-netlify dev
-```
-
-4. 正式部署：
-
-```bash
-netlify deploy --prod
-```
-
-## 不推荐只用 Netlify Drop
-
-Netlify Drop 很适合纯静态页面，但联网搜索教材需要 Functions。Functions 需要 Netlify 在部署时识别 `netlify/functions` 目录并打包接口。
-
-如果你只拖拽上传后发现搜索教材失败，通常不是网站按钮坏了，而是 Functions 没有被部署出来。推荐改用 GitHub 连接 Netlify，或者使用 Netlify CLI 部署。
-
-## 更新网站时怎么做
-
-以后你让我改完网站后，只需要把这些文件一起更新到 GitHub：
+以后更新时，只需要替换仓库里的这些文件：
 
 - `index.html`
 - `styles.css`
 - `app.js`
 - `netlify.toml`
-- `netlify/functions/search-books.mjs`
 - `assets/` 文件夹
 
-GitHub 更新后，Netlify 会自动重新部署，原来的公开网址一般不变。
+## 关于个人数据
 
-## 常见检查
+教材、记事本、复盘、打勾记录会保存在浏览器本地 `localStorage` 里。你更新网站文件不会自动清空这些数据，但如果换浏览器、换设备、清理浏览器数据，原来的记录就不会跟着过去。
 
-如果页面能打开但搜索不能用，先检查：
+## 当前教材搜索方式
 
-1. Netlify 后台是否能看到 `search-books` 这个 Function。
-2. 打开 `/.netlify/functions/search-books?q=英语` 是否返回 JSON。
-3. 仓库根目录是否真的有 `netlify.toml`。
-4. `netlify/functions/search-books.mjs` 是否一起上传了。
-5. 如果你用了自定义域名，页面仍然会优先尝试 Netlify Function，不需要额外改代码。
+当前版本不再联网搜索教材，只保留“搜索已添加教材”。如果要新增教材，在“教材库与计划”里手动创建，系统会生成可编辑章节模板，并且会阻止重复添加同名教材。

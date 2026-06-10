@@ -32,168 +32,222 @@
           <div class="hero-actions">
             <button class="primary-btn" id="generateAllBtn" type="button">生成总计划</button>
             <button class="ghost-btn" id="resetBtn" type="button">恢复初始教材</button>
+            <button class="ghost-btn" id="returnHomeBtn" type="button">返回首页</button>
           </div>
         </div>
       </section>
 
       <section class="study-flow">
-      <section class="top-hub">
-        <div class="top-tools" aria-label="学习工具">
-          <button class="tool-btn" id="notesBtn" type="button">记事本</button>
-          <button class="tool-btn" id="gameBtn" type="button">小游戏</button>
-          <button class="tool-btn" id="pomodoroBtn" type="button">番茄钟</button>
-          <button class="tool-btn" id="reviewBtn" type="button">每日复盘</button>
-        </div>
-
-        <article class="daily-english" id="dailyEnglish">
-          <div>
-            <p class="kicker">每日英文短篇</p>
-            <h2 id="dailyEnglishTitle">A Quiet Hour Before Sunrise</h2>
+        <section class="feature-center" aria-label="功能中心">
+          <div class="feature-center-head">
+            <p class="kicker">功能中心</p>
+            <h2>按学习场景进入，不把所有内容挤在一屏</h2>
           </div>
-          <p class="english-text" id="dailyEnglishText">Before sunrise, Lin opened her notebook and wrote down three small goals for the day. She knew that motivation would not always arrive on time, so she built a routine that could carry her forward when her mood was uncertain. For the first twenty minutes, she reviewed yesterday's mistakes without checking the answers. Then she read one short passage aloud, marking useful phrases in blue. By the time the city became noisy, her mind had already entered a steady rhythm. Progress, she realized, was not a sudden gift but a quiet result of returning to the desk again and again.</p>
-          <p class="translation" id="dailyEnglishTranslation">日出前，林打开笔记本，写下当天的三个小目标。她知道动力并不总会准时出现，所以建立了一套习惯，让自己在状态不稳定时也能继续前进。前二十分钟，她不看答案，先复盘昨天的错误。接着，她朗读一篇短文，并用蓝色标出有用表达。等城市渐渐喧闹起来时，她的思绪已经进入稳定节奏。她意识到，进步不是突然降临的礼物，而是一次又一次回到书桌前所产生的安静结果。</p>
-          <details>
-            <summary>查看语法</summary>
-            <div class="grammar-list" id="dailyEnglishGrammar">
-              <p><strong>Before sunrise</strong> 是时间状语，放在句首交代故事发生的时间。</p>
-              <p><strong>She knew that...</strong> 中 that 引导宾语从句，说明“她知道”的具体内容。</p>
-              <p><strong>so she built...</strong> 使用 so 连接因果关系，前半句是原因，后半句是行动结果。</p>
-              <p><strong>when her mood was uncertain</strong> 是时间状语从句，也带有条件意味，表示状态不稳定的时候。</p>
-              <p><strong>marking useful phrases in blue</strong> 是现在分词短语，补充说明朗读时同时进行的动作。</p>
-              <p><strong>not a sudden gift but...</strong> 使用 not...but... 结构，强调进步不是偶然，而是重复行动的结果。</p>
-            </div>
-          </details>
-        </article>
 
-        <section class="add-book top-import">
-          <div class="add-book-head">
-            <div>
-              <p class="kicker">添加教材</p>
-              <h2>手动创建教材</h2>
-            </div>
-            <form id="quickAddForm">
-              <input id="quickTitle" placeholder="如：线性代数、考研英语阅读、操作系统" required />
-              <button class="primary-btn" type="submit">手动添加</button>
-            </form>
+          <div class="feature-groups">
+            <article class="feature-group">
+              <p class="kicker">学习规划</p>
+              <button class="feature-btn active" type="button" data-feature-target="plannerPanel">
+                <strong>教材库与计划</strong>
+                <span>添加教材、设置年份、编辑章节、生成复习方法。</span>
+              </button>
+            </article>
+
+            <article class="feature-group">
+              <p class="kicker">英语训练</p>
+              <button class="feature-btn" type="button" data-feature-target="englishPanel">
+                <strong>每日英文短篇</strong>
+                <span>约 100 词短篇、中文翻译、语法拆解。</span>
+              </button>
+              <button class="feature-btn" id="gameBtn" type="button">
+                <strong>六级小游戏</strong>
+                <span>词汇配对、翻译、续写评分，每次打开换题。</span>
+              </button>
+            </article>
+
+            <article class="feature-group">
+              <p class="kicker">学习工具</p>
+              <button class="feature-btn" id="notesBtn" type="button">
+                <strong>记事本</strong>
+                <span>按日期保存，支持背景、字体、字号和颜色。</span>
+              </button>
+              <button class="feature-btn" id="pomodoroBtn" type="button">
+                <strong>番茄钟</strong>
+                <span>完成后计入今日学习时长和热力图。</span>
+              </button>
+              <button class="feature-btn" id="reviewBtn" type="button">
+                <strong>每日复盘</strong>
+                <span>按日期记录任务、卡点和最小完成量。</span>
+              </button>
+            </article>
+
+            <article class="feature-group">
+              <p class="kicker">记录导出</p>
+              <button class="feature-btn" type="button" data-feature-target="recordPanel">
+                <strong>计划表与热力图</strong>
+                <span>勾选任务、切换月/年热力图、导出今日或周报图片。</span>
+              </button>
+            </article>
           </div>
-          <div class="quick-add-status" id="quickAddStatus">输入教材名后会自动生成可编辑章节模板；已存在的同名教材不会重复添加。</div>
         </section>
-      </section>
 
-      <section class="workspace">
-        <aside class="sidebar">
-          <div class="section-head">
-            <div>
-              <p class="kicker">教材库</p>
-              <h2>我的教材</h2>
+        <section class="feature-panel active" id="plannerPanel" aria-label="教材库与计划">
+          <section class="add-book top-import">
+            <div class="add-book-head">
+              <div>
+                <p class="kicker">添加教材</p>
+                <h2>手动创建教材</h2>
+              </div>
+              <form id="quickAddForm">
+                <input id="quickTitle" placeholder="如：线性代数、考研英语阅读、操作系统" required />
+                <button class="primary-btn" type="submit">手动添加</button>
+              </form>
             </div>
-            <span class="count-pill" id="bookCount">0</span>
-          </div>
-          <label class="sidebar-filter">
-            学习年份
-            <select id="yearFilter"></select>
-          </label>
-          <label class="sidebar-filter">
-            搜索教材
-            <input id="bookSearchInput" type="search" placeholder="搜索已添加教材" />
-          </label>
-          <div class="book-list" id="bookList"></div>
-        </aside>
+            <div class="quick-add-status" id="quickAddStatus">输入教材名后会自动生成可编辑章节模板；已存在的同名教材不会重复添加。</div>
+          </section>
 
-        <section class="planner">
-          <div class="toolbar">
-            <div>
-              <p class="kicker">当前教材</p>
-              <h2 id="activeTitle">英语四级</h2>
-            </div>
-            <div class="toolbar-actions">
-              <button class="icon-btn" id="exportBtn" type="button" title="导出学习计划">↓</button>
-              <button class="icon-btn" id="deleteBtn" type="button" title="删除当前教材">×</button>
-            </div>
-          </div>
-
-          <div class="panel-grid">
-            <form class="editor" id="bookForm">
-              <label>
-                教材名称
-                <input id="titleInput" required />
-              </label>
-              <label>
-                考试日期
-                <input id="examInput" type="date" required />
-              </label>
-              <label>
+          <section class="workspace">
+            <aside class="sidebar">
+              <div class="section-head">
+                <div>
+                  <p class="kicker">教材库</p>
+                  <h2>我的教材</h2>
+                </div>
+                <span class="count-pill" id="bookCount">0</span>
+              </div>
+              <label class="sidebar-filter">
                 学习年份
-                <input id="yearInput" type="number" min="2020" max="2100" required />
+                <select id="yearFilter"></select>
               </label>
-              <label>
-                每日学习时间（分钟）
-                <input id="minutesInput" type="number" min="20" max="480" step="10" required />
+              <label class="sidebar-filter">
+                搜索教材
+                <input id="bookSearchInput" type="search" placeholder="搜索已添加教材" />
               </label>
-              <label>
-                当前掌握度
-                <select id="masteryInput">
-                  <option value="0.25">刚开始</option>
-                  <option value="0.45">有基础</option>
-                  <option value="0.65">基本掌握</option>
-                  <option value="0.8">冲刺查漏</option>
-                </select>
-              </label>
-              <label class="wide">
-                章节 / 模块（每行一个，可加 “| 难度1-5”。联网导入会先生成可编辑模板）
-                <textarea id="chaptersInput" rows="7" required></textarea>
-              </label>
-              <label class="wide">
-                备注目标
-                <textarea id="goalInput" rows="3"></textarea>
-              </label>
-              <button class="primary-btn wide" type="submit">保存并生成</button>
-            </form>
+              <div class="book-list" id="bookList"></div>
+            </aside>
 
-            <div class="method-card">
-              <p class="kicker">自动生成</p>
-              <h3>最优复习方法</h3>
-              <div id="methodOutput" class="method-output"></div>
-            </div>
-          </div>
-
-          <div class="plan-section">
-            <div class="section-head">
-              <div>
-                <p class="kicker">学习节奏</p>
-                <h2>计划表</h2>
-              </div>
-              <div class="plan-actions">
-                <button class="primary-btn" id="exportTodayImageBtn" type="button">导出今日图片</button>
-                <button class="primary-btn" id="exportWeeklyImageBtn" type="button">导出周报图片</button>
-                <div class="segment">
-                  <button type="button" class="active" data-view="week">周视图</button>
-                  <button type="button" data-view="day">日视图</button>
+            <section class="planner">
+              <div class="toolbar">
+                <div>
+                  <p class="kicker">当前教材</p>
+                  <h2 id="activeTitle">英语四级</h2>
+                </div>
+                <div class="toolbar-actions">
+                  <button class="icon-btn" id="exportBtn" type="button" title="导出学习计划">↓</button>
+                  <button class="icon-btn" id="deleteBtn" type="button" title="删除当前教材">×</button>
                 </div>
               </div>
-            </div>
-            <div id="planOutput" class="plan-output"></div>
-          </div>
 
-          <div class="heatmap-section">
-            <div class="section-head">
-              <div>
-                <p class="kicker">坚持记录</p>
-                <h2>学习热力图</h2>
-              </div>
-              <div class="heatmap-actions">
-                <span class="heatmap-legend">颜色越深，完成越多</span>
-                <div class="segment heatmap-toggle">
-                  <button type="button" class="active" data-heatmap-view="month">月</button>
-                  <button type="button" data-heatmap-view="year">年</button>
+              <div class="panel-grid">
+                <form class="editor" id="bookForm">
+                  <label>
+                    教材名称
+                    <input id="titleInput" required />
+                  </label>
+                  <label>
+                    考试日期
+                    <input id="examInput" type="date" required />
+                  </label>
+                  <label>
+                    学习年份
+                    <input id="yearInput" type="number" min="2020" max="2100" required />
+                  </label>
+                  <label>
+                    每日学习时间（分钟）
+                    <input id="minutesInput" type="number" min="20" max="480" step="10" required />
+                  </label>
+                  <label>
+                    当前掌握度
+                    <select id="masteryInput">
+                      <option value="0.25">刚开始</option>
+                      <option value="0.45">有基础</option>
+                      <option value="0.65">基本掌握</option>
+                      <option value="0.8">冲刺查漏</option>
+                    </select>
+                  </label>
+                  <label class="wide">
+                    章节 / 模块（每行一个，可加 “| 难度1-5”，可随时修改）
+                    <textarea id="chaptersInput" rows="7" required></textarea>
+                  </label>
+                  <label class="wide">
+                    备注目标
+                    <textarea id="goalInput" rows="3"></textarea>
+                  </label>
+                  <button class="primary-btn wide" type="submit">保存并生成</button>
+                </form>
+
+                <div class="method-card">
+                  <p class="kicker">自动生成</p>
+                  <h3>最优复习方法</h3>
+                  <div id="methodOutput" class="method-output"></div>
                 </div>
               </div>
+            </section>
+          </section>
+        </section>
+
+        <section class="feature-panel" id="englishPanel" aria-label="每日英文">
+          <article class="daily-english" id="dailyEnglish">
+            <div>
+              <p class="kicker">每日英文短篇</p>
+              <h2 id="dailyEnglishTitle">A Quiet Hour Before Sunrise</h2>
             </div>
-            <div class="heatmap-grid" id="heatmapGrid"></div>
+            <p class="english-text" id="dailyEnglishText">Before sunrise, Lin opened her notebook and wrote down three small goals for the day. She knew that motivation would not always arrive on time, so she built a routine that could carry her forward when her mood was uncertain. For the first twenty minutes, she reviewed yesterday's mistakes without checking the answers. Then she read one short passage aloud, marking useful phrases in blue. By the time the city became noisy, her mind had already entered a steady rhythm. Progress, she realized, was not a sudden gift but a quiet result of returning to the desk again and again.</p>
+            <p class="translation" id="dailyEnglishTranslation">日出前，林打开笔记本，写下当天的三个小目标。她知道动力并不总会准时出现，所以建立了一套习惯，让自己在状态不稳定时也能继续前进。前二十分钟，她不看答案，先复盘昨天的错误。接着，她朗读一篇短文，并用蓝色标出有用表达。等城市渐渐喧闹起来时，她的思绪已经进入稳定节奏。她意识到，进步不是突然降临的礼物，而是一次又一次回到书桌前所产生的安静结果。</p>
+            <details>
+              <summary>查看语法</summary>
+              <div class="grammar-list" id="dailyEnglishGrammar">
+                <p><strong>Before sunrise</strong> 是时间状语，放在句首交代故事发生的时间。</p>
+                <p><strong>She knew that...</strong> 中 that 引导宾语从句，说明“她知道”的具体内容。</p>
+                <p><strong>so she built...</strong> 使用 so 连接因果关系，前半句是原因，后半句是行动结果。</p>
+                <p><strong>when her mood was uncertain</strong> 是时间状语从句，也带有条件意味，表示状态不稳定的时候。</p>
+                <p><strong>marking useful phrases in blue</strong> 是现在分词短语，补充说明朗读时同时进行的动作。</p>
+                <p><strong>not a sudden gift but...</strong> 使用 not...but... 结构，强调进步不是偶然，而是重复行动的结果。</p>
+              </div>
+            </details>
+          </article>
+        </section>
+
+        <section class="feature-panel" id="recordPanel" aria-label="计划记录与导出">
+          <div class="records-layout">
+            <div class="plan-section">
+              <div class="section-head">
+                <div>
+                  <p class="kicker">学习节奏</p>
+                  <h2>计划表</h2>
+                </div>
+                <div class="plan-actions">
+                  <button class="primary-btn" id="exportTodayImageBtn" type="button">导出今日图片</button>
+                  <button class="primary-btn" id="exportWeeklyImageBtn" type="button">导出周报图片</button>
+                  <div class="segment">
+                    <button type="button" class="active" data-view="week">周视图</button>
+                    <button type="button" data-view="day">日视图</button>
+                  </div>
+                </div>
+              </div>
+              <div id="planOutput" class="plan-output"></div>
+            </div>
+
+            <div class="heatmap-section">
+              <div class="section-head">
+                <div>
+                  <p class="kicker">坚持记录</p>
+                  <h2>学习热力图</h2>
+                </div>
+                <div class="heatmap-actions">
+                  <span class="heatmap-legend">颜色越深，完成越多</span>
+                  <div class="segment heatmap-toggle">
+                    <button type="button" class="active" data-heatmap-view="month">月</button>
+                    <button type="button" data-heatmap-view="year">年</button>
+                  </div>
+                </div>
+              </div>
+              <div class="heatmap-grid" id="heatmapGrid"></div>
+            </div>
           </div>
         </section>
-      </section>
-      <footer class="site-footer">Roing老师小课堂开课了。</footer>
+
+        <footer class="site-footer">Roing老师小课堂开课了。</footer>
       </section>
 
     </main>
