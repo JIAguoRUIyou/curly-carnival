@@ -2308,7 +2308,7 @@ function openModal(modal) {
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
   if (modal === nodes.relaxGameModal) {
-    startRelaxSceneLoop();
+    renderRelaxScene();
     if (!relaxGameState.muted) startRelaxMusic();
   }
 }
@@ -2708,6 +2708,7 @@ function triggerRelaxVisualFx(type, duration = 12, side = "enemy", shake = 0) {
   relaxGameState.screenShake = Math.max(relaxGameState.screenShake, shake);
   if (side === "enemy") relaxGameState.enemyFlash = Math.max(relaxGameState.enemyFlash, duration);
   if (side === "hero") relaxGameState.heroFlash = Math.max(relaxGameState.heroFlash, duration);
+  if (nodes.relaxGameModal?.classList.contains("open")) startRelaxSceneLoop();
 }
 
 function stepRelaxVisualFx() {
@@ -2745,7 +2746,6 @@ function startRelaxGame(gender) {
   relaxGameState.heroName = gender === "male" ? "蓝铠剑士" : "红巾游侠";
   relaxGameState.queue = buildRelaxGameQueue();
   spawnRelaxStage();
-  startRelaxSceneLoop();
   startRelaxMusic();
   nodes.relaxAnswerInput?.focus();
 }
@@ -3281,12 +3281,23 @@ function renderRelaxScene() {
 function relaxGameTick() {
   if (!nodes.relaxGameModal?.classList.contains("open")) return;
   relaxGameFrame += 1;
+  stepRelaxVisualFx();
   renderRelaxScene();
-  relaxGameAnimationId = requestAnimationFrame(relaxGameTick);
+  if (
+    relaxGameState.fxFrame > 0 ||
+    relaxGameState.bossIntro > 0 ||
+    relaxGameState.screenShake > 0 ||
+    relaxGameState.enemyFlash > 0 ||
+    relaxGameState.heroFlash > 0
+  ) {
+    relaxGameAnimationId = requestAnimationFrame(relaxGameTick);
+  } else {
+    stopRelaxSceneLoop();
+  }
 }
 
 function startRelaxSceneLoop() {
-  if (relaxGameAnimationId) cancelAnimationFrame(relaxGameAnimationId);
+  if (relaxGameAnimationId) return;
   relaxGameAnimationId = requestAnimationFrame(relaxGameTick);
 }
 
